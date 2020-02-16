@@ -16,3 +16,6 @@ Command to test if all prerequisites are met:
   `sudo docker run -it --rm --gpus all ubuntu nvidia-smi`
   
 ## Setup Instructions
+  `bash ./setup.sh`
+If you need `sudo` permission to run `docker`, run `sudo -s` before running *setup.sh*.  
+You should be greeted by the Docker container **openaigym** when this script finishes. The working directory is */root* and the repo is mounted at */root/RL289A-WQ2020*.  
