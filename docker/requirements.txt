@@ -1,0 +1,31 @@
+# Basic
+numpy
+ipython
+jupyter
+pandas
+scipy
+matplotlib
+tqdm
+pytest
+
+# Deep learning
+tensorflow-gpu
+keras
+h5py
+pydot
+keras-rl
+baselines
+tensorforce
+
+# OpenAI Gym requirements
+PyOpenGL
+piglet
+pyglet
+gym
+#gym[all]
+
+# Other
+JSAnimation
+
+# Gym-sokoban
+gym-sokoban
