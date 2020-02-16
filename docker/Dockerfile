@@ -1,7 +1,21 @@
 ARG CUDA="10.2"
 ARG CUDNN="7"
 
-FROM nvidia/cuda:${CUDA}-cudnn${CUDNN}-devel-ubuntu18.04
+#FROM nvidia/cuda:${CUDA}-cudnn${CUDNN}-devel-ubuntu18.04
+FROM nvidia/cudagl:${CUDA}-devel-ubuntu18.04
+
+#########################################
+# SECTION 0: Install cudnn              #
+#########################################
+ENV CUDNN_VERSION 7.6.5.32
+LABEL com.nvidia.cudnn.version="${CUDNN_VERSION}"
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libcudnn7=$CUDNN_VERSION-1+cuda10.2 \
+    libcudnn7-dev=$CUDNN_VERSION-1+cuda10.2 \
+  && \
+    apt-mark hold libcudnn7 && \
+    rm -rf /var/lib/apt/lists/*
 
 RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections
 
@@ -59,8 +73,5 @@ WORKDIR /root
 ######################################
 # SECTION 5: Add running instruction #
 ######################################
-RUN echo "echo -e \"\n\"" >> /root/.bashrc
-RUN echo "echo -e \"################################################################################\n\"" >> /root/.bashrc
-RUN echo "echo -e \"\tCommand to enter repository:\n\t\tcd /root/RL289A-WQ2020 && xvfb-run -s "-screen 0 1280x720x24" jupyter notebook --no-browser --ip=0.0.0.0 --allow-root --port=9000 &\n\"" >> /root/.bashrc
-RUN echo "echo -e \"################################################################################\n\"" >> /root/.bashrc
-
+COPY bashrc /tmp/
+RUN cat /tmp/bashrc >> /root/.bashrc

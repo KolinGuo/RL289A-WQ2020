@@ -21,7 +21,8 @@ tensorforce
 PyOpenGL
 piglet
 pyglet
-gym[all]
+gym
+#gym[all]
 
 # Other
 JSAnimation

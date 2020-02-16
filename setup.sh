@@ -23,6 +23,9 @@ USAGE+="\t                 default is 0\n"
 REMOVEIMDDOCKERCONTAINERCMD="--rm=true"
 REMOVEPREVDOCKERIMAGE=false
 
+COMMANDTORUN="cd /root/$REPONAME && xvfb-run -s \"-screen 0 1280x720x24\" jupyter notebook --no-browser --ip=0.0.0.0 --allow-root --port=$JUPYTERPORT &"
+COMMANDTOSTARTCONTAINER="sudo docker start -ai $CONTNAME"
+
 check_root() {
   if [ "$EUID" -ne 0 ] ; then
     echo -e "Please run this script under sudo with root permission."
@@ -81,11 +84,23 @@ remove_prev_docker_image () {
   fi
 }
 
+write_command_to_enter_repo_file() {
+  # Echo command to run the application
+  echo -n COMMANDTORUN=\" > bashrc \
+    && echo -n ${COMMANDTORUN} | sed 's/\"/\\"/g' >> bashrc \
+    && echo \" >> bashrc
+  echo echo -e \"\\n\\n\" >> bashrc
+  echo echo -e \"################################################################################\\n\" >> bashrc
+  echo echo -e \"\\tCommand to enter repository:\\n\\t\\t'${COMMANDTORUN}'\\n\" >> bashrc
+  echo echo -e \"################################################################################\\n\" >> bashrc
+}
+
 build_docker_image() {
   # Build and run the image
   echo -e "\nBuilding image $IMGNAME..."
   docker build $REMOVEIMDDOCKERCONTAINERCMD -t $IMGNAME .
   test_retval "build Docker image $IMGNAME"
+  rm -rf bashrc
 }
 
 build_docker_container() {
@@ -109,7 +124,6 @@ build_docker_container() {
 
 print_command_to_enter_repo() {
   # Echo command to run the application
-  COMMANDTORUN="cd /root/$REPONAME && xvfb-run -s "-screen 0 1280x720x24" jupyter notebook --no-browser --ip=0.0.0.0 --allow-root --port=$JUPYTERPORT &"
   echo -e "\n\n"
   echo -e "################################################################################\n"
   echo -e "\tCommand to enter repository:\n\t\t${COMMANDTORUN}\n"
@@ -127,7 +141,6 @@ start_docker_container() {
 
 print_command_to_restart_container() {
   # Echo command to start container
-  COMMANDTOSTARTCONTAINER="sudo docker start -ai $CONTNAME"
   echo -e "\n\n"
   echo -e "################################################################################\n"
   echo -e "\tCommand to start Docker container:\n\t\t${COMMANDTOSTARTCONTAINER}\n"
@@ -147,6 +160,7 @@ echo -e ".......... Set up will start in 5 seconds .........."
 sleep 5
 
 remove_prev_docker_image
+write_command_to_enter_repo_file
 build_docker_image
 build_docker_container
 print_command_to_enter_repo
