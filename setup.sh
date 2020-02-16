@@ -109,7 +109,7 @@ build_docker_container() {
 
 print_command_to_enter_repo() {
   # Echo command to run the application
-  COMMANDTORUN="cd /root/$REPONAME && jupyter notebook --no-browser --ip=0.0.0.0 --allow-root --port=$JUPYTERPORT &"
+  COMMANDTORUN="cd /root/$REPONAME && xvfb-run -s "-screen 0 1280x720x24" jupyter notebook --no-browser --ip=0.0.0.0 --allow-root --port=$JUPYTERPORT &"
   echo -e "\n\n"
   echo -e "################################################################################\n"
   echo -e "\tCommand to enter repository:\n\t\t${COMMANDTORUN}\n"
