@@ -114,6 +114,7 @@ build_docker_container() {
   docker create -it --name=$CONTNAME \
   	-v "$SCRIPTPATH":/root/$REPONAME \
   	-v /tmp/.X11-unix:/tmp/.X11-unix \
+    -v /etc/localtime:/etc/localtime:ro \
   	-e DISPLAY=$DISPLAY \
   	--ipc=host \
     --gpus all \
