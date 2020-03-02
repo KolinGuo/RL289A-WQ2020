@@ -14,6 +14,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import tensorflow as tf
 
+from utils.experience_replay import ReplayMemory
+
 def get_train_args():
     train_args = argparse.ArgumentParser()
 
@@ -23,7 +25,7 @@ def get_train_args():
     train_args.add_argument("--render", type=bool, default=False, help="Whether or not to display the environment during training")
     train_args.add_argument("--grid_width", type=int, default=10, help="Grid width")
     train_args.add_argument("--grid_height", type=int, default=10, help="Grid height")
-    train_args.add_argument("--steps_per_state", type=int, default=4, help="Sequence of steps which constitutes a single state")
+    train_args.add_argument("--grids_per_state", type=int, default=4, help="Sequence of grids which constitutes a single state")
 
     # Training parameters
     train_args.add_argument("--num_steps_train", type=int, default=5e7, help="Number of steps to train for")
@@ -58,6 +60,18 @@ def log_train_args(args):
         json.dump(args.__dict__, f, indent=4)
 
 def train(args):
+
+    # Check if GPU is available
+    print("Num GPUs Available: ", len(tf.config.experimental.list_physical_devices('GPU')))
+
+    # Create environment
+    env = gym.make(args.env)
+    nActions = 4   # Push (up, down, left, right): 1, 2, 3, 4
+
+    # Initialize replay memory
+    replay_mem = ReplayMemory(args)
+
+
     pass
 
 if __name__ == '__main__':
