@@ -8,7 +8,7 @@ import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers, optimizers, losses
 
-class DQNModel():
+class DQNModel:
     def __init__(self, state_shape, num_actions, learning_rate=None, load_model_path=None, name='DQN'):
         self.state_shape = state_shape
         self.num_actions = num_actions

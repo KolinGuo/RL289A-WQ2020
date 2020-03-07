@@ -66,7 +66,7 @@ def train(args):
 
     # Create environment
     env = gym.make(args.env)
-    nActions = 4   # Push (up, down, left, right): 1, 2, 3, 4
+    num_actions = 4     # Push (up, down, left, right): 1, 2, 3, 4
 
     # Initialize replay memory
     replay_mem = ReplayMemory(args)
