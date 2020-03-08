@@ -11,8 +11,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import tensorflow as tf
 
-print(sys.path)
-
 from utils.experience_replay import ReplayMemory
 from utils.state_buffer import StateBuffer
 from utils.network import DQNModel
