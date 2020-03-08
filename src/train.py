@@ -5,16 +5,17 @@
 '''
 
 from datetime import datetime
-import json
-import os
-import argparse
-import gym
-import gym_sokoban
+import json, os, sys, argparse, logging
+import gym, gym_sokoban
 import numpy as np
 import matplotlib.pyplot as plt
 import tensorflow as tf
 
+print(sys.path)
+
 from utils.experience_replay import ReplayMemory
+from utils.state_buffer import StateBuffer
+from utils.network import DQNModel
 
 def get_train_args():
     train_args = argparse.ArgumentParser()
@@ -45,8 +46,8 @@ def get_train_args():
     train_args.add_argument("--checkpoint_dir", type=str, default='./checkpoints', help="Directory for saving/loading checkpoints")
     train_args.add_argument("--checkpoint_file", type=str, default=None, help="Checkpoint file to load and resume training from (if None, train from scratch)")
     train_args.add_argument("--log_dir", type=str, default='./logs/train', help="Directory for saving logs")
-    log_file_suffix = datetime.now().strftime("_%Y%m%d_%H%M%S")
-    train_args.add_argument("--log_file_suffix", type=str, default=log_file_suffix, help="Log file suffix (current timestamp) DON'T MODIFY")
+    log_filename = datetime.now().strftime("%Y%m%d_%H%M%S.log")
+    train_args.add_argument("--log_filename", type=str, default=log_filename, help="Log file name (current timestamp) DON'T MODIFY")
 
     return train_args.parse_args()
 
@@ -54,25 +55,71 @@ def log_train_args(args):
     # Create summary writer to write summaries to disk
     if not os.path.exists(args.log_dir):
         os.makedirs(args.log_dir)
-    log_file_name = 'Training_args' + args.log_file_suffix + '.log'
+
+    # Set up logging to file
+    log_filepath = os.path.join(args.log_dir, args.log_filename)
+    logging.basicConfig(level=logging.DEBUG,
+                        format='[%(asctime)s] [%(name)-8s] [%(levelname)-8s] %(message)s',
+                        datefmt='%Y-%m-%d %H:%M:%S',
+                        filename=log_filepath,
+                        filemode='w')
+
+    # define a Handler which writes INFO messages or higher to the sys.stdout
+    console = logging.StreamHandler(sys.stdout)
+    console.setLevel(logging.INFO)
+    # set a format which is simpler for console use
+    formatter = logging.Formatter('[%(name)-8s] [%(levelname)-8s] %(message)s')
+    # tell the handler to use this format
+    console.setFormatter(formatter)
+    # add the handler to the root logger
+    logging.getLogger('').addHandler(console)
+
+    # Get logger for training args
+    logger = logging.getLogger('args')
+
     # Write the training arguments
-    with open(os.path.join(args.log_dir, log_file_name), 'w') as f:
-        json.dump(args.__dict__, f, indent=4)
+    for key, value in vars(args).items():
+        logger.debug('{%s: %s}', key, value)
 
 def train(args):
+    # Get logger for training args
+    logger = logging.getLogger('train')
 
     # Check if GPU is available
-    print("Num GPUs Available: ", len(tf.config.experimental.list_physical_devices('GPU')))
+    logger.info("Num GPUs Available: %d", len(tf.config.experimental.list_physical_devices('GPU')))
 
     # Create environment
     env = gym.make(args.env)
     num_actions = 4     # Push (up, down, left, right): 1, 2, 3, 4
 
-    # Initialize replay memory
+    # Initialize replay memory and state buffer
     replay_mem = ReplayMemory(args)
+    state_buf = StateBuffer(args)
+
+    # Instantiate DQN and DQN_target
+    state_shape = (args.grid_height, args.grid_width, args.num_room_states, args.grids_per_state)
+    load_model_path = None
+    if args.checkpoint_file is not None:    # Resume training
+        load_model_path = os.path.join(args.checkpoint_dir, args.checkpoint_file)
+
+    DQN = DQNModel(state_shape, num_actions, args.learning_rate, load_model_path=load_model_path, name='DQN')
+    DQN_target = DQNModel(state_shape, num_actions, load_model_path=load_model_path, name='DQN_target')
+
+    # TODO: save loss and accuracy while training
+
+    ## Begin training
+    env.reset()
+
+    # Populate replay memory to initial_replay_mem_size
+    
+
+    # Start training
 
 
-    pass
+
+
+
+
 
 if __name__ == '__main__':
     # Change back to repository directory

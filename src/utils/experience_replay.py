@@ -16,7 +16,7 @@ class ReplayMemory:
         # Preallocate replay memory
         self.actions = np.empty(self.buffer_size, dtype=np.uint8)
         self.rewards = np.empty(self.buffer_size, dtype=np.float64)
-        self.grids = np.empty((self.dims[0], self.dims[1], self.dims[2], self.buffer_size), dtype=np.bool)
+        self.grids = np.empty((self.dims[0], self.dims[1], self.dims[2], self.buffer_size), dtype=np.uint8)
         self.terminals = np.empty(self.buffer_size, dtype=np.bool)
 
         # Replay memory config
@@ -26,11 +26,11 @@ class ReplayMemory:
         self.current = 0
 
         # Preallocate transition states for minibatch
-        self.states = np.empty((self.batch_size, self.dims[0], self.dims[1], self.dims[2], self.grids_per_state), dtype=np.bool)
-        self.next_states = np.empty((self.batch_size, self.dims[0], self.dims[1], self.dims[2], self.grids_per_state), dtype=np.bool)
+        self.states = np.empty((self.batch_size, self.dims[0], self.dims[1], self.dims[2], self.grids_per_state), dtype=np.uint8)
+        self.next_states = np.empty((self.batch_size, self.dims[0], self.dims[1], self.dims[2], self.grids_per_state), dtype=np.uint8)
 
     def add(self, action, reward, grid, terminal):
-        assert grid.shape == self.dims
+        assert grid.shape == self.dims, "Grids must be of same shape"
 
         # Note: grid is S_{t+1}, after action and reward
         self.actions[self.current] = action

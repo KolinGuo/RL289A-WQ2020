@@ -26,7 +26,7 @@ class DQNModel:
             outputs = layers.Dense(self.num_actions, name='d2')(x)
     
             self.model = keras.Model(inputs, outputs, name=name)
-        else    # Restart training from the checkpoint
+        else:    # Restart training from the checkpoint
             self.model = keras.models.load_model(load_model_path)
 
         # Create optimizer
