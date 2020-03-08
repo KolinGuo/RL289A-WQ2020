@@ -18,9 +18,9 @@ class DQNModel:
         if load_model_path is None: 
             # Input dim: (batch, H, W, D, channels) = (32, 10, 10, 7, 4)
             inputs = keras.Input(shape=self.state_shape, name='state')
-            x = layers.Conv3D(32, (7, 7, 5), 1, activation='relu', name='conv1')(inputs)
-            x = layers.Conv3D(64, (5, 5, 5), 1, activation='relu', name='conv2')(x)
-            x = layers.Conv3D(64, (3, 3, 3), 1, activation='relu', name='conv3')(x)
+            x = layers.Conv3D(32, (7, 7, 5), 1, padding='same', activation='relu', name='conv1')(inputs)
+            x = layers.Conv3D(64, (5, 5, 5), 1, padding='same', activation='relu', name='conv2')(x)
+            x = layers.Conv3D(64, (3, 3, 3), 1, padding='same', activation='relu', name='conv3')(x)
             x = layers.Flatten(name='flatten')(x)
             x = layers.Dense(512, activation='relu', name='d1')(x)
             outputs = layers.Dense(self.num_actions, name='d2')(x)
