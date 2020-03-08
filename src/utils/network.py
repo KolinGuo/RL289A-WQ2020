@@ -30,7 +30,7 @@ class DQNModel:
             self.model = keras.models.load_model(load_model_path)
 
         # Create optimizer
-        if learningRate is not None:
+        if learning_rate is not None:
             self.optimizer = optimizers.RMSprop(learning_rate, momentum=0.95, epsilon=0.01)
         # Create loss function
         #self.loss_func = losses.MeanSquaredError()
