@@ -239,11 +239,12 @@ def train(args):
 
             logger.info("{Training Step: %d/%d}", si, args.num_steps_train)
             logger.info("Number of Episodes: %d", len(reward_episodes))
+            logger.info("Recent Step Exploration Rate: %.3f", epsilon)
             logger.info("Average Per-Episode Reward: %.3f", sum(reward_episodes)/float(len(reward_episodes)))
             logger.info("Average Per-Episode Step: %.3f", sum(step_episodes)/float(len(step_episodes)))
-            logger.info("Average Per-Step Maximum Predicted Q Value: %.3f", sum(Qval_steps)/float(len(Qval_steps)))
-            logger.info("Average Per-Step Training Loss: %.3f", avg_training_loss)
-            logger.info("Average Per-Step Training Time: %.3f", sum(duration_steps)/float(len(duration_steps)))
+            logger.info("Average Per-Step Maximum Predicted Q Value: %.8f", sum(Qval_steps)/float(len(Qval_steps)))
+            logger.info("Average Per-Step Training Loss: %.8f", avg_training_loss)
+            logger.info("Average Per-Step Training Time: %.5f second", sum(duration_steps)/float(len(duration_steps)))
             reward_episodes = []
             step_episodes = []
             duration_steps = []
