@@ -87,13 +87,13 @@ class DQNModel:
     def predict(self, state):
         # training=False is only needed if there are layers with different
         # behavior during training versus inference (e.g. Dropout).
-        Q_vals = self.model(states, training=False)
+        Q_vals = self.model(state, training=False)
         return tf.math.argmax(Q_vals, axis=1)
 
     # Infer the network for Q(S, A) given a state
     def infer(self, state):
         # training=False is only needed if there are layers with different
         # behavior during training versus inference (e.g. Dropout).
-        Q_vals = self.model(states, training=False)
+        Q_vals = self.model(state, training=False)
         return Q_vals
 
