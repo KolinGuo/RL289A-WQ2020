@@ -102,6 +102,10 @@ def train(args):
         else:
             return epsilon_end
 
+    # Create checkpoint directory
+    if not os.path.exists(args.checkpoint_dir):
+        os.makedirs(args.checkpoint_dir)
+
     # Get logger for training
     logger = logging.getLogger('train')
 
@@ -156,6 +160,7 @@ def train(args):
     reward_episodes = []
     step_one_episode = 0
     step_episodes = []
+    Qval_steps = []
     duration_steps = []
 
     reset_env_and_state_buffer(env, state_buf, args)
@@ -200,39 +205,57 @@ def train(args):
             reset_env_and_state_buffer(env, state_buf, args)
 
         ## Training Step
-
-
         # Sample a random minibatch of transitions from ReplayMemory
-
-        # Calculate the tragetQvals
+        states_batch, actions_batch, rewards_batch, next_states_batch, terminals_batch = replay_mem.getMinibatch()
+        # Infer DQN_target for Q(S', A)
+        next_states_Qvals = DQN_target.infer(next_states_batch)
+        max_next_states_Qvals = np.max(next_states_Qvals, axis=1)
+        assert max_next_states_Qvals.shape == (args.batch_size,), "Wrong dimention for predicted next state Q vals"
+        # Set Q(S', A) for all terminal state S'
+        max_next_states_Qvals[terminals_batch] = 0
+        # Save average maximum predicted Q values
+        Qval_steps.append(np.mean(max_next_states_Qvals))
+        # Calculate the traget Q values
+        targetQs = rewards_batch + args.discount_rate * max_next_states_Qvals
 
         # Pass to DQN
+        DQN.train_step(states_batch, actions_batch, targetQs)
 
         # Update DQN_target every args.update_target_step steps
+        if si % args.update_target_step == 0:
+            update_save_path = os.path.join(args.checkpoint_dir, 'DQN_Update.tf')
+            DQN.save_model(update_save_path)
+            DQN_target.load_model(update_save_path)
 
         duration = time.time() - start_time
         duration_steps.append(duration)
 
         # Save log
         if si % args.save_log_step == 0:
+            avg_training_loss = DQN.get_training_loss()
 
             logger.info("{Training Step: %d/%d}", si, args.num_steps_train)
             logger.info("Number of Episodes: %d", len(reward_episodes))
             logger.info("Average Per-Episode Reward: %.3f", sum(reward_episodes)/float(len(reward_episodes)))
             logger.info("Average Per-Episode Step: %.3f", sum(step_episodes)/float(len(step_episodes)))
+            logger.info("Average Per-Step Maximum Predicted Q Value: %.3f", sum(Qval_steps)/float(len(Qval_steps)))
+            logger.info("Average Per-Step Training Loss: %.3f", avg_training_loss)
             logger.info("Average Per-Step Training Time: %.3f", sum(duration_steps)/float(len(duration_steps)))
             reward_episodes = []
             step_episodes = []
             duration_steps = []
+            Qval_steps = []
 
         # Save checkpoint
         if si % args.save_checkpoint_step == 0:
-            pass
+            save_checkpoint_path = os.path.join(args.checkpoint_dir, 'DQN_Train_{}.tf'.format(si))
+            DQN.save_model(save_checkpoint_path)
 
-        
-
-
-
+    # Training finished
+    logger.info("Finished training...")
+    # Save trained network
+    save_final_network_path = os.path.join(args.checkpoint_dir, 'DQN_Trained_{}.tf'.format(args.num_steps_train))
+    DQN.save_model(save_final_network_path)
 
 if __name__ == '__main__':
     # Change back to repository directory
