@@ -4,6 +4,7 @@
 # Adapted from: https://github.com/msinto93/DQN_Atari/blob/master/utils/state_buffer.py
 '''
 import numpy as np
+import logging
 # Get logger for state buffer
 logger = logging.getLogger('state_buf')
 
