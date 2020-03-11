@@ -69,7 +69,7 @@ class DQNModel:
             # training=True is only needed if there are layers with different
             # behavior during training versus inference (e.g. Dropout).
             Q_vals = self.model(states, training=True)
-            actions_one_hot = tf.one_hot(actions, self.num_actions)
+            actions_one_hot = tf.one_hot(actions, self.num_actions, on_value=1.0, off_value=0.0, dtype=tf.float32)
             Q_vals_actions = tf.math.reduce_sum(Q_vals * actions_one_hot, axis=1)
             loss = self.loss_func(targetQs, Q_vals_actions)
 

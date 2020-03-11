@@ -220,9 +220,9 @@ def train(args):
         targetQs = rewards_batch + args.discount_rate * max_next_states_Qvals
 
         # Pass to DQN
-        states_batch = tf.convert_to_tensor(states_batch, dtype=tf.float32)
-        actions_batch = tf.convert_to_tensor(actions_batch, dtype=tf.float32)
-        targetQs = tf.convert_to_tensor(targetQs, dtype=tf.float32)
+        states_batch = tf.dtypes.cast(states_batch, tf.float32)
+        actions_batch = tf.dtypes.cast(actions_batch, tf.float32)
+        targetQs = tf.dtypes.cast(targetQs, tf.float32)
         DQN.train_step(states_batch, actions_batch, targetQs)
 
         # Update DQN_target every args.update_target_step steps
