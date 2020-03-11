@@ -42,6 +42,9 @@ class DQNModel:
         # Create loss function
         #self.loss_func = losses.MeanSquaredError()
         self.loss_func = losses.Huber()  # less sensitive to outliers (linearized MSE when |x| > delta)
+        # Accumulate training loss
+        self.train_loss = keras.metrics.Mean(name='train_loss')
+        self.train_loss.reset_states()
 
     def print_model_summary(self):
         self.model.summary()
@@ -58,7 +61,7 @@ class DQNModel:
         self.logger.into('Loading the model from %s', load_path)
 
     # Train a step with a batch of states
-    def train_step(self, states, actions, targetQs, loss_metric, accuracy_metric):
+    def train_step(self, states, actions, targetQs):
         with tf.GradientTape() as tape:
             # training=True is only needed if there are layers with different
             # behavior during training versus inference (e.g. Dropout).
@@ -70,9 +73,14 @@ class DQNModel:
         gradients = tape.gradient(loss, self.model.trainable_variables)
         self.optimizer.apply_gradients(zip(gradients, self.model.trainable_variables))
 
-        # Store the loss and accuracy for plotting
-        loss_metric(loss)
-        accuracy_metric(labels, predictions)
+        # Accumulate training loss
+        self.train_loss.update_state(loss)
+    
+    # Get accumulated training loss for an epoch and reset
+    def get_training_loss(self):
+        avg_loss = self.train_loss.result().numpy()
+        self.train_loss.reset_states()
+        return avg_loss
 
     # Predict an action given a state
     def predict(self, state):
@@ -80,4 +88,11 @@ class DQNModel:
         # behavior during training versus inference (e.g. Dropout).
         Q_vals = self.model(states, training=False)
         return tf.math.argmax(Q_vals, axis=1)
+
+    # Infer the network for Q(S, A) given a state
+    def infer(self, state):
+        # training=False is only needed if there are layers with different
+        # behavior during training versus inference (e.g. Dropout).
+        Q_vals = self.model(states, training=False)
+        return Q_vals
 
