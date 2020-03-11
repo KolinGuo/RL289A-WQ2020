@@ -180,7 +180,7 @@ def train(args):
         if random.random() < epsilon:   # Take random action
             actionID = sample_action_space()
         else:   # Take greedy action
-            state = tf.convert_to_tensor(state_buf.get_state())
+            state = tf.convert_to_tensor(state_buf.get_state(), dtype=tf.float32)
             state = state[tf.newaxis, ...]      # Add an axis for batch
             actionQID = DQN.predict(state)
             actionID = actionQID_to_actionID(int(actionQID))    # convert from Tensor to int
@@ -208,6 +208,7 @@ def train(args):
         # Sample a random minibatch of transitions from ReplayMemory
         states_batch, actions_batch, rewards_batch, next_states_batch, terminals_batch = replay_mem.getMinibatch()
         # Infer DQN_target for Q(S', A)
+        next_states_batch = tf.convert_to_tensor(next_states_batch, dtype=tf.float32)
         next_states_Qvals = DQN_target.infer(next_states_batch)
         max_next_states_Qvals = np.max(next_states_Qvals, axis=1)
         assert max_next_states_Qvals.shape == (args.batch_size,), "Wrong dimention for predicted next state Q vals"
@@ -219,6 +220,9 @@ def train(args):
         targetQs = rewards_batch + args.discount_rate * max_next_states_Qvals
 
         # Pass to DQN
+        states_batch = tf.convert_to_tensor(states_batch, dtype=tf.float32)
+        actions_batch = tf.convert_to_tensor(actions_batch, dtype=tf.float32)
+        targetQs = tf.convert_to_tensor(targetQs, dtype=tf.float32)
         DQN.train_step(states_batch, actions_batch, targetQs)
 
         # Update DQN_target every args.update_target_step steps
