@@ -5,7 +5,7 @@
 '''
 
 from datetime import datetime
-import json, os, sys, argparse, logging, random
+import json, os, sys, argparse, logging, random, time
 import gym, gym_sokoban
 import numpy as np
 import matplotlib.pyplot as plt
@@ -14,7 +14,7 @@ import tensorflow as tf
 from utils.experience_replay import ReplayMemory
 from utils.state_buffer import StateBuffer
 from utils.network import DQNModel
-from utils.utils import preprocess_observation
+from utils.utils import preprocess_observation, reset_env_and_state_buffer
 
 def get_train_args():
     train_args = argparse.ArgumentParser()
@@ -40,7 +40,7 @@ def get_train_args():
     train_args.add_argument("--discount_rate", type=float, default=0.99, help="Discount rate (gamma) for future rewards")
     train_args.add_argument("--update_target_step", type=int, default=10000, help="Copy current network parameters to target network every N steps")
     train_args.add_argument("--save_checkpoint_step", type=int, default=250000, help="Save checkpoint every N steps")
-    train_args.add_argument("--save_log_step", type=int, default=1000, help="Save logs every N steps")
+    train_args.add_argument("--save_log_step", type=int, default=1000, help="Save logs (training_time, avg_reward, num_episodes) every N steps")
 
     # Files/directories
     train_args.add_argument("--checkpoint_dir", type=str, default='./checkpoints', help="Directory for saving/loading checkpoints")
@@ -83,7 +83,7 @@ def log_train_args(args):
 
 def train(args):
     ACTION_SPACE = np.array([1, 2, 3, 4], dtype=np.uint8)
-    # Function to get a random action
+    # Function to get a random actionID
     def sample_action_space():
         return random.choice(ACTION_SPACE)
 
@@ -94,6 +94,13 @@ def train(args):
     # Function to convert actionQID (0, 1, 2, 3) to actionID (1, 2, 3, 4)
     def actionQID_to_actionID(actionQID):
         return actionQID+1
+
+    # Function to return epsilon based on current step
+    def get_epsilon(current_step, epsilon_start, epsilon_end, epsilon_decay_step):
+        if current_step < epsilon_decay_step:
+            return epsilon_start + (epsilon_end - epsilon_start) / float(epsilon_decay_step) * current_step
+        else:
+            return epsilon_end
 
     # Get logger for training
     logger = logging.getLogger('train')
@@ -145,10 +152,84 @@ def train(args):
         sys.stdout.flush()
 
     # Start training
+    reward_one_episode = 0
+    reward_episodes = []
+    step_one_episode = 0
+    step_episodes = []
+    duration_steps = []
+
+    reset_env_and_state_buffer(env, state_buf, args)
+    logger.info("Start training...")
+    for si in range(1, args.num_steps_train+1):
+        start_time = time.time()
+
+        ## Playing Step
+        # Perform a step
+        if args.render:
+            env.render(mode='human')
+        else:
+            env.render(mode='tiny_rgb_array')
+
+        # Select a random action based on epsilon-greedy algorithm
+        epsilon = get_epsilon(si, args.epsilon_start, args.epsilon_end, args.epsilon_decay_step)
+        if random.random() < epsilon:   # Take random action
+            actionID = sample_action_space()
+        else:   # Take greedy action
+            state = tf.convert_to_tensor(state_buf.get_state())
+            state = state[tf.newaxis, ...]      # Add an axis for batch
+            actionQID = DQN.predict(state)
+            actionID = actionQID_to_actionID(int(actionQID))    # convert from Tensor to int
+
+        # Take the action and store state transition
+        observation, reward, terminal, _ = env.step(actionID, observation_mode='tiny_rgb_array')
+        grid = preprocess_observation(args, observation)
+        state_buf.add(grid)
+        replay_mem.add(actionID, reward, grid, terminal)
+        # Accumulate reward and increment step
+        reward_one_episode += reward
+        step_one_episode += 1
+
+        if terminal:
+            # Save the accumulate reward for this episode
+            reward_episodes.append(reward_one_episode)
+            reward_one_episode = 0
+            # Save the number of steps for this episode
+            step_episodes.append(step_one_episode)
+            step_one_episode = 0
+            # Reset environment and state buffer
+            reset_env_and_state_buffer(env, state_buf, args)
+
+        ## Training Step
 
 
+        # Sample a random minibatch of transitions from ReplayMemory
 
+        # Calculate the tragetQvals
 
+        # Pass to DQN
+
+        # Update DQN_target every args.update_target_step steps
+
+        duration = time.time() - start_time
+        duration_steps.append(duration)
+
+        # Save log
+        if si % args.save_log_step == 0:
+
+            logger.info("{Training Step: %d/%d}", si, args.num_steps_train)
+            logger.info("Number of Episodes: %d", len(reward_episodes))
+            logger.info("Average Per-Episode Reward: %.3f", sum(reward_episodes)/float(len(reward_episodes)))
+            logger.info("Average Per-Episode Step: %.3f", sum(step_episodes)/float(len(step_episodes)))
+            logger.info("Average Per-Step Training Time: %.3f", sum(duration_steps)/float(len(duration_steps)))
+            reward_episodes = []
+            step_episodes = []
+            duration_steps = []
+
+        # Save checkpoint
+        if si % args.save_checkpoint_step == 0:
+            pass
+
+        
 
 
 

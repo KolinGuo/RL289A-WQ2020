@@ -32,6 +32,8 @@ class ReplayMemory:
         self.states = np.empty((self.batch_size, self.dims[0], self.dims[1], self.dims[2], self.grids_per_state), dtype=np.uint8)
         self.next_states = np.empty((self.batch_size, self.dims[0], self.dims[1], self.dims[2], self.grids_per_state), dtype=np.uint8)
 
+        logger.info('Initializing a ReplayMemory of size %d', self.buffer_size)
+
     def add(self, action, reward, grid, terminal):
         assert grid.shape == self.dims, "Grids must be of same shape"
 

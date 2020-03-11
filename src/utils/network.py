@@ -10,6 +10,9 @@ from tensorflow.keras import layers, optimizers, losses
 
 class DQNModel:
     def __init__(self, state_shape, num_actions, learning_rate=None, load_model_path=None, name='DQN'):
+        # Get logger for network
+        self.logger = logging.getLogger(name)
+
         self.state_shape = state_shape
         self.num_actions = num_actions
 
@@ -26,8 +29,12 @@ class DQNModel:
             outputs = layers.Dense(self.num_actions, name='d2')(x)
     
             self.model = keras.Model(inputs, outputs, name=name)
+
+            self.logger.info('Creating a new DQN model')
         else:    # Restart training from the checkpoint
             self.model = keras.models.load_model(load_model_path)
+
+            self.logger.info('Loading an existing DQN model from %s', load_model_path)
 
         # Create optimizer
         if learning_rate is not None:
@@ -44,9 +51,11 @@ class DQNModel:
 
     def save_model(self, save_path):
         self.model.save(save_path)
+        self.logger.into('Saving the model to %s', save_path)
 
     def load_model(self, load_path):
         self.model = keras.models.load_model(load_path)
+        self.logger.into('Loading the model from %s', load_path)
 
     # Train a step with a batch of states
     def train_step(self, states, actions, targetQs, loss_metric, accuracy_metric):

@@ -24,3 +24,14 @@ def preprocess_observation(args, observation):
         grid[..., si] = np.all(observation == SURFACES[si], axis=2).astype(np.uint8)
 
     return grid
+
+# Reset Gym-Sokoban environment and state buffer, initialize state buffer to first grid
+def reset_env_and_state_buffer(env, state_buf, args):
+    env.reset()
+    state_buf.reset()
+
+    observation = env.render(mode='tiny_rgb_array')
+    grid = preprocess_observation(args, observation)
+
+    for _ in range(args.grids_per_state):
+        state_buf.add(grid)
