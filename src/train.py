@@ -39,7 +39,7 @@ def get_train_args():
     train_args.add_argument("--epsilon_decay_step", type=int, default=1000000, help="After how many steps to stop decaying the exploration rate")
     train_args.add_argument("--discount_rate", type=float, default=0.99, help="Discount rate (gamma) for future rewards")
     train_args.add_argument("--update_target_step", type=int, default=10000, help="Copy current network parameters to target network every N steps")
-    train_args.add_argument("--save_checkpoint_step", type=int, default=250000, help="Save checkpoint every N steps")
+    train_args.add_argument("--save_checkpoint_step", type=int, default=100000, help="Save checkpoint every N steps")
     train_args.add_argument("--save_log_step", type=int, default=1000, help="Save logs (training_time, avg_reward, num_episodes) every N steps")
 
     # Files/directories
@@ -129,8 +129,6 @@ def train(args):
 
     DQN = DQNModel(state_shape, num_actions, args.learning_rate, load_model_path=load_model_path, name='DQN')
     DQN_target = DQNModel(state_shape, num_actions, load_model_path=load_model_path, name='DQN_target')
-
-    # TODO: save loss and accuracy while training
 
     ## Begin training
     env.reset()
