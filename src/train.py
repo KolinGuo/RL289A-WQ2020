@@ -221,7 +221,6 @@ def train(args):
 
         # Pass to DQN
         states_batch = tf.cast(states_batch, tf.float32)
-        actions_batch = tf.cast(actions_batch, tf.float32)
         targetQs = tf.cast(targetQs, tf.float32)
         DQN.train_step(states_batch, actions_batch, targetQs)
 

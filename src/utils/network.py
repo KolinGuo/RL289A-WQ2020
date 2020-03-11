@@ -57,11 +57,11 @@ class DQNModel:
 
     def save_model(self, save_path):
         self.model.save(save_path)
-        self.logger.into('Saving the model to %s', save_path)
+        self.logger.info('Saving the model to %s', save_path)
 
     def load_model(self, load_path):
         self.model = keras.models.load_model(load_path)
-        self.logger.into('Loading the model from %s', load_path)
+        self.logger.info('Loading the model from %s', load_path)
 
     # Train a step with a batch of states
     def train_step(self, states, actions, targetQs):
@@ -69,7 +69,7 @@ class DQNModel:
             # training=True is only needed if there are layers with different
             # behavior during training versus inference (e.g. Dropout).
             Q_vals = self.model(states, training=True)
-            actions_one_hot = tf.one_hot(actions, tf.cast(self.num_actions, tf.float32), on_value=1.0, off_value=0.0, dtype=tf.float32)
+            actions_one_hot = tf.one_hot(actions, self.num_actions, on_value=1.0, off_value=0.0, dtype=tf.float32)
             Q_vals_actions = tf.math.reduce_sum(Q_vals * actions_one_hot, axis=1)
             loss = self.loss_func(targetQs, Q_vals_actions)
 
