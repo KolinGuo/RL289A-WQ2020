@@ -9,7 +9,7 @@ tqdm
 pytest
 
 # Deep learning
-tensorflow-gpu
+tensorflow-gpu==2.1.0
 keras
 h5py
 pydot
@@ -28,4 +28,4 @@ gym
 JSAnimation
 
 # Gym-sokoban
-gym-sokoban
+#gym-sokoban  # Change to install via git clone

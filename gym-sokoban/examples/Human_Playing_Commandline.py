@@ -42,8 +42,6 @@ env = gym.make(env_name)
 ACTION_LOOKUP = env.unwrapped.get_action_lookup()
 print("Created environment: {}".format(env_name))
 
-rewards = [-0.1, 10, -10, 100]
-env.unwrapped.set_rewards(rewards)
 
 def print_available_actions():
     """
