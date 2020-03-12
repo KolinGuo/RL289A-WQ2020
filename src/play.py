@@ -75,7 +75,7 @@ def play(args):
 
         while not ep_done:
             time.sleep(0.05)
-            #env.render()
+            env.render(mode='human')
 
             #Choose random action for initial steps to ensure every episode has a random start point. Then choose action with highest Q-value according to network's current policy.
             if step < initial_steps:
@@ -92,7 +92,7 @@ def play(args):
             step += 1
 
             # Episode can finish either by reaching terminal state or max episode steps
-            if ep_terminal or step == args.max_ep_length:
+            if terminal or step == args.max_ep_length:
                 ep_done = True
 
 
