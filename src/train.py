@@ -5,7 +5,7 @@
 '''
 
 from datetime import datetime
-import json, os, sys, argparse, logging, random, time
+import json, os, sys, argparse, logging, random, time, shutil
 import gym, gym_sokoban
 import numpy as np
 import matplotlib.pyplot as plt
@@ -248,8 +248,8 @@ def train(args):
 
             logger.info("{Training Step: %d/%d}", si, args.num_steps_train)
             logger.info("Number of Episodes: %d", len(reward_episodes))
-            logger.info("Recent Step Exploration Rate: %.3f", epsilon)
-            logger.info("Average Per-Episode Reward: %.3f", sum(reward_episodes)/float(len(reward_episodes)))
+            logger.info("Recent Step Exploration Rate: %.5f", epsilon)
+            logger.info("Average Per-Episode Reward: %.5f", sum(reward_episodes)/float(len(reward_episodes)))
             logger.info("Average Per-Episode Step: %.3f", sum(step_episodes)/float(len(step_episodes)))
             logger.info("Average Per-Step Maximum Predicted Q Value: %.8f", sum(Qval_steps)/float(len(Qval_steps)))
             logger.info("Average Per-Step Training Loss: %.8f", avg_training_loss)
@@ -261,8 +261,14 @@ def train(args):
 
         # Save checkpoint
         if si % args.save_checkpoint_step == 0:
-            save_checkpoint_path = os.path.join(args.checkpoint_dir, 'DQN_Train_{}.tf'.format(si))
+            save_checkpoint_path = os.path.join(args.checkpoint_dir, 
+                    '{}_DQN_Train_{}.tf'.format(args.log_filename.split('.')[0], si))
             DQN.save_model(save_checkpoint_path)
+            # Duplicate the current logfile
+            src_log_filepath = os.path.join(args.log_dir, args.log_filename)
+            dst_log_filepath = os.path.join(args.checkpoint_dir, 
+                    args.log_filename.replace('.', '_DQN_Train_{}.'.format(si)))
+            shutil.copyfile(src_log_filepath, dst_log_filepath)
 
     # Training finished
     logger.info("Finished training...")
