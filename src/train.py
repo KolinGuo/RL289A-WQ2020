@@ -161,7 +161,7 @@ def train(args):
         if terminal:
             env.reset()
 
-        sys.stdout.write('\x1b[2K\rStep {:d}/{:d}'.format(si, args.initial_replay_mem_size))
+        sys.stdout.write('\x1b[2K\rStep {:d}/{:d}'.format(si+1, args.initial_replay_mem_size))
         sys.stdout.flush()
 
     # Start training
