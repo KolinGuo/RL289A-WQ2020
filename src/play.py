@@ -75,8 +75,10 @@ def play(args):
 
         while not ep_done:
             time.sleep(0.05)
-            env.render(mode='human')
-
+            img = env.render(mode='rgb_array')
+            plt.imshow(img)
+            display.clear_output(wait=True)
+            display.display(plt.gcf())
             #Choose random action for initial steps to ensure every episode has a random start point. Then choose action with highest Q-value according to network's current policy.
             if step < initial_steps:
                 actionID = sample_action_space()
