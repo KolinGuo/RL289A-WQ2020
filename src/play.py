@@ -4,7 +4,7 @@
 @author: Mark Sinton (msinto93@gmail.com)
 '''
 
-import time
+import json, os, sys, argparse, logging, random, time
 import numpy as np
 import gym, gym_sokoban
 import matplotlib.pyplot as plt
