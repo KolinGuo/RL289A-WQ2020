@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import tensorflow as tf
 
 import matplotlib.pyplot as plt
-%matplotlib inline
+#%matplotlib inline
 from IPython import display
 from train import get_train_args
 from utils.state_buffer import StateBuffer
