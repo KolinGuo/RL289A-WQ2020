@@ -24,6 +24,7 @@ REMOVEIMDDOCKERCONTAINERCMD="--rm=true"
 REMOVEPREVDOCKERIMAGE=false
 
 COMMANDTORUN="cd /root/$REPONAME && xvfb-run -s \"-screen 0 1280x720x24\" jupyter notebook --no-browser --ip=0.0.0.0 --allow-root --port=$JUPYTERPORT &"
+COMMANDTOINSTALL="cd /root/$REPONAME/gym-sokoban && pip3 install -e ."
 COMMANDTOSTARTCONTAINER="sudo docker start -ai $CONTNAME"
 
 check_root() {
@@ -89,8 +90,13 @@ write_command_to_enter_repo_file() {
   echo -n COMMANDTORUN=\" > bashrc \
     && echo -n ${COMMANDTORUN} | sed 's/\"/\\"/g' >> bashrc \
     && echo \" >> bashrc
+  # Echo command to install gym_sokoban
+  echo -n COMMANDTOINSTALL=\" >> bashrc \
+    && echo -n ${COMMANDTOINSTALL} | sed 's/\"/\\"/g' >> bashrc \
+    && echo \" >> bashrc
   echo echo -e \"\\n\\n\" >> bashrc
   echo echo -e \"################################################################################\\n\" >> bashrc
+  echo echo -e \"\\tCommand to install gym_sokoban for the first time:\\n\\t\\t'${COMMANDTOINSTALL}'\\n\" >> bashrc
   echo echo -e \"\\tCommand to enter repository:\\n\\t\\t'${COMMANDTORUN}'\\n\" >> bashrc
   echo echo -e \"################################################################################\\n\" >> bashrc
 }
@@ -164,7 +170,7 @@ remove_prev_docker_image
 write_command_to_enter_repo_file
 build_docker_image
 build_docker_container
-print_command_to_enter_repo
+#print_command_to_enter_repo
 start_docker_container
 
 # When exit from docker container
