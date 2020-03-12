@@ -28,6 +28,12 @@ def get_train_args():
     train_args.add_argument("--grid_height", type=int, default=10, help="Grid height")
     train_args.add_argument("--grids_per_state", type=int, default=4, help="Sequence of grids which constitutes a single state")
 
+    # Environment rewards
+    train_args.add_argument("--env_penalty_for_step", type=float, default=-0.1, help="Reward of performing a step")
+    train_args.add_argument("--env_reward_box_on_target", type=float, default=10.0, help="Reward of pushing a box on target")
+    train_args.add_argument("--env_penalty_box_off_target", type=float, default=-10.0, help="Reward of pushing a box off target")
+    train_args.add_argument("--env_reward_finished", type=float, default=100.0, help="Reward of winning (pushed all boxes on targets)")
+
     # Training parameters
     train_args.add_argument("--num_steps_train", type=int, default=50000000, help="Number of steps to train for")
     train_args.add_argument("--batch_size", type=int, default=32, help="Batch size of state transitions")
@@ -116,6 +122,11 @@ def train(args):
     env = gym.make(args.env)
     num_actions = 4     # Push (up, down, left, right): 1, 2, 3, 4
     env.unwrapped.set_maxsteps(args.max_step)
+    env.unwrapped.set_rewards(
+            [args.env_penalty_for_step, 
+                args.env_reward_box_on_target, 
+                args.env_penalty_box_off_target, 
+                args.env_reward_finished])
 
     # Initialize replay memory and state buffer
     replay_mem = ReplayMemory(args)
