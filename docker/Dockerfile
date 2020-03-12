@@ -1,5 +1,4 @@
-ARG CUDA="10.2"
-ARG CUDNN="7"
+ARG CUDA="10.1"
 
 #FROM nvidia/cuda:${CUDA}-cudnn${CUDNN}-devel-ubuntu18.04
 FROM nvidia/cudagl:${CUDA}-devel-ubuntu18.04
@@ -11,10 +10,16 @@ ENV CUDNN_VERSION 7.6.5.32
 LABEL com.nvidia.cudnn.version="${CUDNN_VERSION}"
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libcudnn7=$CUDNN_VERSION-1+cuda10.2 \
-    libcudnn7-dev=$CUDNN_VERSION-1+cuda10.2 \
+    libcudnn7=$CUDNN_VERSION-1+cuda10.1 \
+    libcudnn7-dev=$CUDNN_VERSION-1+cuda10.1 \
   && \
-    apt-mark hold libcudnn7 && \
+    apt-mark hold libcudnn7 \
+  && \
+    apt-get install -y --no-install-recommends \
+    libnvinfer6=6.0.1-1+cuda10.1 \
+    libnvinfer-dev=6.0.1-1+cuda10.1 \
+    libnvinfer-plugin6=6.0.1-1+cuda10.1 \
+  && \
     rm -rf /var/lib/apt/lists/*
 
 RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections
