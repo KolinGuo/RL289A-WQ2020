@@ -219,7 +219,8 @@ def train(args):
         # Infer DQN_target for Q(S', A)
         next_states_batch = tf.convert_to_tensor(next_states_batch, dtype=tf.float32)
         next_states_Qvals = DQN_target.infer(next_states_batch)
-        max_next_states_Qvals = np.max(next_states_Qvals, axis=1)
+        max_next_states_Qvals = tf.math.reduce_max(next_states_Qvals, axis=1)
+        max_next_states_Qvals = np.array(max_next_states_Qvals)
         assert max_next_states_Qvals.shape == (args.batch_size,), "Wrong dimention for predicted next state Q vals"
         # Set Q(S', A) for all terminal state S'
         max_next_states_Qvals[terminals_batch] = 0
