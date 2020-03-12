@@ -20,5 +20,5 @@ Command to test if all prerequisites are met:
 If you need `sudo` permission to run `docker`, run `sudo -s` before running *setup.sh*.  
 You should be greeted by the Docker container **openaigym** when this script finishes. The working directory is */root* and the repo is mounted at */root/RL289A-WQ2020*.  
 
-When entering the docker container for the first time, please install gym-sokoban as well.  
+When entering the docker container for the first time, please install `gym-sokoban` as well.  
   `cd /root/RL289A-WQ2020/gym-sokoban && pip3 install -e .`
