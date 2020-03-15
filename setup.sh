@@ -1,6 +1,5 @@
 #!/bin/bash 
 # Ensure that you have installed docker(API >= 1.40) and the nvidia graphics driver on host!
-# This script should be run under sudo with root permission.
 
 SCRIPT=$(readlink -f "$0")
 SCRIPTPATH=$(dirname "$SCRIPT")
@@ -23,10 +22,11 @@ USAGE+="\t                 default is 0\n"
 REMOVEIMDDOCKERCONTAINERCMD="--rm=true"
 REMOVEPREVDOCKERIMAGE=false
 
-COMMANDTORUN="cd /root/$REPONAME && xvfb-run -s \"-screen 0 1280x720x24\" jupyter notebook --no-browser --ip=0.0.0.0 --allow-root --port=$JUPYTERPORT &"
-COMMANDTOINSTALL="cd /root/$REPONAME/gym-sokoban && pip3 install -e ."
-COMMANDTOSTARTCONTAINER="sudo docker start -ai $CONTNAME"
+COMMANDTORUN="cd /$REPONAME && xvfb-run -s \"-screen 0 1280x720x24\" jupyter notebook --no-browser --ip=0.0.0.0 --allow-root --port=$JUPYTERPORT &"
+COMMANDTOINSTALL="cd /$REPONAME/gym-sokoban && pip3 install -e ."
+COMMANDTOSTARTCONTAINER="docker start -ai $CONTNAME"
 
+# Instead, add user to group 'docker'
 check_root() {
   if [ "$EUID" -ne 0 ] ; then
     echo -e "Please run this script under sudo with root permission."
@@ -87,18 +87,22 @@ remove_prev_docker_image () {
 
 write_command_to_enter_repo_file() {
   # Echo command to run the application
-  echo -n COMMANDTORUN=\" > bashrc \
+  echo "# Cyan color" > bashrc \
+    && echo echo -e \"\\e[1\;36m\" >> bashrc
+  echo -n COMMANDTORUN=\" >> bashrc \
     && echo -n ${COMMANDTORUN} | sed 's/\"/\\"/g' >> bashrc \
     && echo \" >> bashrc
   # Echo command to install gym_sokoban
   echo -n COMMANDTOINSTALL=\" >> bashrc \
     && echo -n ${COMMANDTOINSTALL} | sed 's/\"/\\"/g' >> bashrc \
     && echo \" >> bashrc
-  echo echo -e \"\\n\\n\" >> bashrc
+  #echo echo -e \"\\n\\n\" >> bashrc
   echo echo -e \"################################################################################\\n\" >> bashrc
   echo echo -e \"\\tCommand to install gym_sokoban for the first time:\\n\\t\\t'${COMMANDTOINSTALL}'\\n\" >> bashrc
   echo echo -e \"\\tCommand to enter repository:\\n\\t\\t'${COMMANDTORUN}'\\n\" >> bashrc
   echo echo -e \"################################################################################\\n\" >> bashrc
+  echo "# Turn off colors" >> bashrc \
+    && echo echo -e \"\\e[m\" >> bashrc
 }
 
 build_docker_image() {
@@ -118,7 +122,8 @@ build_docker_container() {
 
   echo -e "\nBuilding a container $CONTNAME from the image $IMGNAME..."
   docker create -it --name=$CONTNAME \
-  	-v "$SCRIPTPATH":/root/$REPONAME \
+    -u $(id -u):$(id -g) \
+  	-v "$SCRIPTPATH":/$REPONAME \
   	-v /tmp/.X11-unix:/tmp/.X11-unix \
     -v /etc/localtime:/etc/localtime:ro \
   	-e DISPLAY=$DISPLAY \
@@ -155,7 +160,7 @@ print_command_to_restart_container() {
 }
 
 # Check root permission
-check_root
+#check_root
 # Parse shell script's input arguments
 parse_argument "$@"
 # Print the setup info

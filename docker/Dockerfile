@@ -1,26 +1,27 @@
-ARG CUDA="10.1"
+#ARG CUDA="10.1"
 
 #FROM nvidia/cuda:${CUDA}-cudnn${CUDNN}-devel-ubuntu18.04
-FROM nvidia/cudagl:${CUDA}-devel-ubuntu18.04
+#FROM nvidia/cudagl:${CUDA}-devel-ubuntu18.04
+FROM tensorflow/tensorflow:2.1.0-gpu-py3-jupyter
 
 #########################################
 # SECTION 0: Install cudnn              #
 #########################################
-ENV CUDNN_VERSION 7.6.5.32
-LABEL com.nvidia.cudnn.version="${CUDNN_VERSION}"
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libcudnn7=$CUDNN_VERSION-1+cuda10.1 \
-    libcudnn7-dev=$CUDNN_VERSION-1+cuda10.1 \
-  && \
-    apt-mark hold libcudnn7 \
-  && \
-    apt-get install -y --no-install-recommends \
-    libnvinfer6=6.0.1-1+cuda10.1 \
-    libnvinfer-dev=6.0.1-1+cuda10.1 \
-    libnvinfer-plugin6=6.0.1-1+cuda10.1 \
-  && \
-    rm -rf /var/lib/apt/lists/*
+#ENV CUDNN_VERSION 7.6.5.32
+#LABEL com.nvidia.cudnn.version="${CUDNN_VERSION}"
+#
+#RUN apt-get update && apt-get install -y --no-install-recommends \
+#    libcudnn7=$CUDNN_VERSION-1+cuda10.1 \
+#    libcudnn7-dev=$CUDNN_VERSION-1+cuda10.1 \
+#  && \
+#    apt-mark hold libcudnn7 \
+#  && \
+#    apt-get install -y --no-install-recommends \
+#    libnvinfer6=6.0.1-1+cuda10.1 \
+#    libnvinfer-dev=6.0.1-1+cuda10.1 \
+#    libnvinfer-plugin6=6.0.1-1+cuda10.1 \
+#  && \
+#    rm -rf /var/lib/apt/lists/*
 
 RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections
 
@@ -54,10 +55,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Python
-RUN apt-get update && apt-get install -y \
-    python3 \
-    python3-pip
-
+#RUN apt-get update && apt-get install -y \
+#    python3 \
+#    python3-pip
+#
 # Upgrade pip
 RUN python3 -m pip install --upgrade pip
 
@@ -73,10 +74,10 @@ RUN pip3 install jupyter_contrib_nbextensions \
   && pip3 install jupyter_nbextensions_configurator \
   && jupyter nbextensions_configurator enable
 
-WORKDIR /root
+WORKDIR /
 
 ######################################
 # SECTION 5: Add running instruction #
 ######################################
 COPY bashrc /tmp/
-RUN cat /tmp/bashrc >> /root/.bashrc
+RUN cat /tmp/bashrc >> /etc/bash.bashrc
