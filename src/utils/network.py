@@ -64,6 +64,7 @@ class DQNModel:
         self.logger.info('Loading the model from %s', load_path)
 
     # Train a step with a batch of states
+    @tf.function
     def train_step(self, states, actions, targetQs):
         with tf.GradientTape() as tape:
             # training=True is only needed if there are layers with different
@@ -86,6 +87,7 @@ class DQNModel:
         return avg_loss
 
     # Predict an action given a state
+    @tf.function
     def predict(self, state):
         # training=False is only needed if there are layers with different
         # behavior during training versus inference (e.g. Dropout).
@@ -93,6 +95,7 @@ class DQNModel:
         return tf.math.argmax(Q_vals, axis=1)
 
     # Infer the network for Q(S, A) given a state
+    @tf.function
     def infer(self, state):
         # training=False is only needed if there are layers with different
         # behavior during training versus inference (e.g. Dropout).
