@@ -132,11 +132,13 @@ def play(args):
             else:
                 if random.random() < args.epsilon_value:   # Take random action
                     actionID = sample_action_space()
+                    print("Random Action\n")
                 else:   # Take greedy action
                     state = tf.convert_to_tensor(state_buf.get_state(), dtype=tf.float32)
                     state = state[tf.newaxis, ...]      # Add an axis for batch
                     actionQID = DQN_target.predict(state)
                     actionID = actionQID_to_actionID(int(actionQID))    # convert from Tensor to int
+                    print("Greedy Action\n")
 
             observation, reward, terminal, _ = env.step(actionID, observation_mode='tiny_rgb_array')
             grid = preprocess_observation(args, observation)
