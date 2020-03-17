@@ -8,6 +8,7 @@ CONTNAME="openaigym"
 #DOCKERFILEPATH="./docker"
 REPONAME="RL289A-WQ2020"
 JUPYTERPORT="9000"
+TENSORBOARDPORT="6006"
 cd "$SCRIPTPATH"
 #cd "$DOCKERFILEPATH"
 
@@ -130,6 +131,7 @@ build_docker_container() {
   	--ipc=host \
     --gpus all \
   	-p $JUPYTERPORT:$JUPYTERPORT \
+  	-p $TENSORBOARDPORT:$TENSORBOARDPORT \
   	$IMGNAME /bin/bash
   test_retval "create Docker container"
 }
