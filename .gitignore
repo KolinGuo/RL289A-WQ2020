@@ -2,6 +2,7 @@
 .sokoban_cache/
 checkpoints/
 logs/
+src/images
 # Vim
 *.swp
 *.fuse*
