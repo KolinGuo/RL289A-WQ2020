@@ -1,5 +1,7 @@
 # Sokoban Cache of DeepMind Boxoban pre-gen puzzles
 .sokoban_cache/
+checkpoints/
+logs/
 # Vim
 *.swp
 *.fuse*
