@@ -108,12 +108,6 @@ def train(args):
         else:
             return epsilon_end
 
-    # Create another directory for this training
-    args.checkpoint_dir = os.path.join(args.checkpoint_dir, args.log_filename.split('.')[0])
-    # Create checkpoint directory
-    if not os.path.exists(args.checkpoint_dir):
-        os.makedirs(args.checkpoint_dir)
-
     # Get logger for training
     logger = logging.getLogger('train')
 
@@ -134,12 +128,26 @@ def train(args):
     replay_mem = ReplayMemory(args)
     state_buf = StateBuffer(args)
 
-    # Instantiate DQN and DQN_target
-    state_shape = (args.grid_height, args.grid_width, args.num_surfaces, args.grids_per_state)
+    # Check if resume from training
     load_model_path = None
     if args.checkpoint_file is not None:    # Resume training
         load_model_path = os.path.join(args.checkpoint_dir, args.checkpoint_file)
+        assert os.path.exists(load_model_path), 'Path "{}" does not exist!'.format(load_model_path)
 
+        start_step = args.checkpoint_file.split('/')[-1].split('.')[0].split('_')[-1]
+        assert len(start_step)>0, "Invalid checkpoint file for extracting start_step"
+        start_step = int(start_step)
+    else:   # Train from scratch
+        # Create another directory for this training
+        args.checkpoint_dir = os.path.join(args.checkpoint_dir, args.log_filename.split('.')[0])
+        start_step = 0
+
+    # Create checkpoint directory
+    if not os.path.exists(args.checkpoint_dir):
+        os.makedirs(args.checkpoint_dir)
+
+    # Instantiate DQN and DQN_target
+    state_shape = (args.grid_height, args.grid_width, args.num_surfaces, args.grids_per_state)
     DQN = DQNModel(state_shape, num_actions, args.learning_rate, load_model_path=load_model_path, name='DQN')
     DQN_target = DQNModel(state_shape, num_actions, load_model_path=load_model_path, name='DQN_target')
 
@@ -176,7 +184,7 @@ def train(args):
 
     reset_env_and_state_buffer(env, state_buf, args)
     logger.info("Start training...")
-    for si in range(1, args.num_steps_train+1):
+    for si in range(start_step+1, args.num_steps_train+1):
         start_time = time.time()
 
         ## Playing Step
