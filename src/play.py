@@ -80,9 +80,10 @@ def play(args):
     # Creating target directory if images are to be stored
     if save_images and not os.path.exists('images'):
         try:
-        os.makedirs('images')
+            os.makedirs('images')
+            os.chdir('images')
         except OSError:
-        print('Error: Creating images target directory. ')
+            print('Error: Creating images target directory. ')
 
 
     if args.checkpoint_file is not None:    # Resume training
