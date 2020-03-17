@@ -41,18 +41,20 @@ def get_play_args(train_args):
     play_args.add_argument("--checkpoint_file", type=str, default=None, help="Checkpoint file to load and resume training from (if None, train from scratch)")
 
     #Render
-    play_args.add_argument('--render_mode', '-m', metavar='render_mode', help='Render Mode (default: human)', default='human')
-    play_args.add_argument('--gifs', action='store_true', help='Generate Gif files from images')
-    play_args.add_argument('--save', action='store_true', help='Save images of single steps')
+    play_args.add_argument('--gifs', default=True, action='store_true', help='Generate Gif files from images')
+    play_args.add_argument('--save', default=True, action='store_true', help='Save images of single steps')
 
     return play_args.parse_args()
 
-generate_gifs = args.gifs
-render_mode = args.render_mode
-save_images = args.save or args.gifs
-scale_image = 16
+
 
 def play(args):
+    generate_gifs = args.gifs
+    save_images = args.save or args.gifs
+    print(save_images)
+    render_mode = 'rgb_array'
+    scale_image = 16
+
     ACTION_SPACE = np.array([1, 2, 3, 4], dtype=np.uint8)
     # Function to get a random action
     def sample_action_space():
@@ -74,6 +76,15 @@ def play(args):
     state_buf = StateBuffer(args)
     state_shape = (args.grid_height, args.grid_width, args.num_surfaces, args.grids_per_state)
     load_model_path = None
+
+    # Creating target directory if images are to be stored
+    if save_images and not os.path.exists('images'):
+        try:
+        os.makedirs('images')
+        except OSError:
+        print('Error: Creating images target directory. ')
+
+
     if args.checkpoint_file is not None:    # Resume training
         load_model_path = os.path.join(args.checkpoint_dir, args.checkpoint_file)
 
@@ -87,44 +98,46 @@ def play(args):
         initial_steps = np.random.randint(1, args.max_initial_random_steps+1)
 
         while not ep_done:
-            time.sleep(0.05)
-            img = env.render()
-            plt.imshow(img)
-            display.clear_output(wait=True)
-            display.display(plt.gcf())
-            #Choose random action for initial steps to ensure every episode has a random start point. Then choose action with highest Q-value according to network's current policy.
-            if step < initial_steps:
-                actionID = sample_action_space()
-            else:
-                state = tf.convert_to_tensor(state_buf.get_state(), dtype=tf.float32)
-                state = state[tf.newaxis, ...]      # Add an axis for batch
-                actionQID = DQN_target.predict(state)
-                actionID = actionQID_to_actionID(int(actionQID))    # convert from Tensor to int
+        time.sleep(0.05)
+        img = env.render(mode = render_mode)
+        plt.imshow(img)
+        display.clear_output(wait=True)
+        display.display(plt.gcf())
+        #Choose random action for initial steps to ensure every episode has a random start point. Then choose action with highest Q-value according to network's current policy.
+        if step < initial_steps:
+            actionID = sample_action_space()
+        else:
+            state = tf.convert_to_tensor(state_buf.get_state(), dtype=tf.float32)
+            state = state[tf.newaxis, ...]      # Add an axis for batch
+            actionQID = DQN_target.predict(state)
+            actionID = actionQID_to_actionID(int(actionQID))    # convert from Tensor to int
 
-            observation, reward, terminal, _ = env.step(actionID, observation_mode='tiny_rgb_array')
-            grid = preprocess_observation(args, observation)
-            state_buf.add(grid)
-            step += 1
+        observation, reward, terminal, _ = env.step(actionID, observation_mode='tiny_rgb_array')
+        grid = preprocess_observation(args, observation)
+        state_buf.add(grid)
+        step += 1
 
-            # Episode can finish either by reaching terminal state or max episode steps
-            if terminal or step == args.max_ep_length:
-                ep_done = True
+        if save_images:
+            img = Image.fromarray(np.array(env.render(render_mode, scale=scale_image)), 'RGB')
+            img.save(os.path.join('images', 'observation_{}_{}.png'.format(ep, step)))
+
+        # Episode can finish either by reaching terminal state or max episode steps
+        if terminal or step == args.max_ep_length:
+            ep_done = True
 
         if generate_gifs:
             print('')
             import imageio
 
-            with imageio.get_writer(os.path.join('images', 'round_{}.gif'.format(i_episode)), mode='I', fps=1) as writer:
+            with imageio.get_writer(os.path.join('images', 'round_{}.gif'.format(ep)), mode='I', fps=1) as writer:
 
-                    for t in range(n_steps):
-                        try:
-
-                            filename = os.path.join('images', 'observation_{}_{}.png'.format(i_episode, t))
-                            image = imageio.imread(filename)
-                            writer.append_data(image)
-
-                        except:
-                            pass
+            for t in range(args.max_ep_length):
+                try:
+                    filename = os.path.join('images', 'observation_{}_{}.png'.format(ep, t))
+                    image = imageio.imread(filename)
+                    writer.append_data(image)
+                except:
+                    pass
 
 
 if  __name__ == '__main__':
