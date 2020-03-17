@@ -26,14 +26,13 @@ def get_play_args(train_args):
     # Environment parameters (First 4 params must be same as those used in training)
     play_args.add_argument('--env', '-e', metavar='env', help='Environment to load (default: Boxoban-Val-v0)', default='Boxoban-Val-v0')
     play_args.add_argument("--num_surfaces", type=int, default=7, help="Number of room surfaces for one-hot encoding")
-    play_args.add_argument("--max_step", type=int, default=200, help="Maximum number of steps in a single game episode")
     play_args.add_argument("--grid_width", type=int, default=10, help="Grid width")
     play_args.add_argument("--grid_height", type=int, default=10, help="Grid height")
     play_args.add_argument("--grids_per_state", type=int, default=4, help="Sequence of grids which constitutes a single state")
 
     # Play parameters
     play_args.add_argument("--num_eps", type=int, default=5, help="Number of episodes to run for")
-    play_args.add_argument("--max_ep_length", type=int, default=2000, help="Maximum number of steps per episode")
+    play_args.add_argument("--max_ep_length", type=int, default=200, help="Maximum number of steps per episode")
     play_args.add_argument("--max_initial_random_steps", type=int, default=4, help="Maximum number of random steps to take at start of episode to ensure random starting point")
     play_args.add_argument("--epsilon_value", type=float, default=0.05, help="Exploration rate for the play")
 
