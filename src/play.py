@@ -35,6 +35,7 @@ def get_play_args(train_args):
     play_args.add_argument("--num_eps", type=int, default=5, help="Number of episodes to run for")
     play_args.add_argument("--max_ep_length", type=int, default=2000, help="Maximum number of steps per episode")
     play_args.add_argument("--max_initial_random_steps", type=int, default=4, help="Maximum number of random steps to take at start of episode to ensure random starting point")
+    play_args.add_argument("--epsilon_value", type=float, default=0.05, help="Exploration rate for the play")
 
     # Files/directories
     play_args.add_argument("--checkpoint_dir", type=str, default='./checkpoints', help="Directory for saving/loading checkpoints")
@@ -129,10 +130,13 @@ def play(args):
             if step < initial_steps:
                 actionID = sample_action_space()
             else:
-                state = tf.convert_to_tensor(state_buf.get_state(), dtype=tf.float32)
-                state = state[tf.newaxis, ...]      # Add an axis for batch
-                actionQID = DQN_target.predict(state)
-                actionID = actionQID_to_actionID(int(actionQID))    # convert from Tensor to int
+                if random.random() < args.epsilon_value:   # Take random action
+                    actionID = sample_action_space()
+                else:   # Take greedy action
+                    state = tf.convert_to_tensor(state_buf.get_state(), dtype=tf.float32)
+                    state = state[tf.newaxis, ...]      # Add an axis for batch
+                    actionQID = DQN_target.predict(state)
+                    actionID = actionQID_to_actionID(int(actionQID))    # convert from Tensor to int
 
             observation, reward, terminal, _ = env.step(actionID, observation_mode='tiny_rgb_array')
             grid = preprocess_observation(args, observation)
