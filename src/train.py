@@ -108,6 +108,8 @@ def train(args):
         else:
             return epsilon_end
 
+    # Create another directory for this training
+    args.checkpoint_dir = os.path.join(args.checkpoint_dir, args.log_filename.split('.')[0])
     # Create checkpoint directory
     if not os.path.exists(args.checkpoint_dir):
         os.makedirs(args.checkpoint_dir)
@@ -263,12 +265,12 @@ def train(args):
         # Save checkpoint
         if si % args.save_checkpoint_step == 0:
             save_checkpoint_path = os.path.join(args.checkpoint_dir, 
-                    '{}_DQN_Train_{}.tf'.format(args.log_filename.split('.')[0], si))
+                    'DQN_Train_{}.tf'.format(si))
             DQN.save_model(save_checkpoint_path)
             # Duplicate the current logfile
             src_log_filepath = os.path.join(args.log_dir, args.log_filename)
             dst_log_filepath = os.path.join(args.checkpoint_dir, 
-                    args.log_filename.replace('.', '_DQN_Train_{}.'.format(si)))
+                    'DQN_Train_{}.log'.format(si))
             shutil.copyfile(src_log_filepath, dst_log_filepath)
 
     # Training finished
