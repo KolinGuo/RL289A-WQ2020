@@ -33,11 +33,11 @@ class DQNModel:
     
             self.model = keras.Model(inputs, outputs, name=name)
 
-            self.logger.info('Creating a new DQN model')
+            self.logger.info('__init__: Creating a new DQN model')
         else:    # Restart training from the checkpoint
             self.model = keras.models.load_model(load_model_path)
 
-            self.logger.info('Loading an existing DQN model from %s', load_model_path)
+            self.logger.info('__init__: Loading an existing DQN model from "%s"', load_model_path)
 
         # Create optimizer
         if learning_rate is not None:

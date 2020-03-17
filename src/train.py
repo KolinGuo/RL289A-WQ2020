@@ -64,7 +64,7 @@ def log_train_args(args):
 
     # Set up logging to file
     log_filepath = os.path.join(args.log_dir, args.log_filename)
-    logging.basicConfig(level=logging.DEBUG,
+    logging.basicConfig(level=logging.INFO,
                         format='[%(asctime)s] [%(name)-12s] [%(levelname)-8s] %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S',
                         filename=log_filepath,
@@ -85,7 +85,7 @@ def log_train_args(args):
 
     # Write the training arguments
     for key, value in vars(args).items():
-        logger.debug('{%s: %s}', key, value)
+        logger.info('{%s: %s}', key, value)
 
 def train(args):
     ACTION_SPACE = np.array([1, 2, 3, 4], dtype=np.uint8)
