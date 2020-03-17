@@ -132,13 +132,13 @@ def play(args):
 
                 with imageio.get_writer(os.path.join('images', 'round_{}.gif'.format(ep)), mode='I', fps=1) as writer:
 
-                for t in range(args.max_ep_length):
-                    try:
-                        filename = os.path.join('images', 'observation_{}_{}.png'.format(ep, t))
-                        image = imageio.imread(filename)
-                        writer.append_data(image)
-                    except:
-                        pass
+                    for t in range(args.max_ep_length):
+                        try:
+                            filename = os.path.join('images', 'observation_{}_{}.png'.format(ep, t))
+                            image = imageio.imread(filename)
+                            writer.append_data(image)
+                        except:
+                            pass
 
 
 if  __name__ == '__main__':
