@@ -17,13 +17,14 @@ from train import get_train_args
 from utils.state_buffer import StateBuffer
 from utils.network import DQNModel
 from utils.utils import preprocess_observation, reset_env_and_state_buffer
+from PIL import Image
 
 
 def get_play_args(train_args):
     play_args = argparse.ArgumentParser()
 
     # Environment parameters (First 4 params must be same as those used in training)
-    play_args.add_argument("--env", type=str, default='Sokoban-v0', help="Environment to use for training")
+    play_args.add_argument('--env', '-e', metavar='env', help='Environment to load (default: Boxoban-Val-v0)', default='Boxoban-Val-v0')
     play_args.add_argument("--num_surfaces", type=int, default=7, help="Number of room surfaces for one-hot encoding")
     play_args.add_argument("--max_step", type=int, default=200, help="Maximum number of steps in a single game episode")
     play_args.add_argument("--grid_width", type=int, default=10, help="Grid width")
@@ -39,8 +40,17 @@ def get_play_args(train_args):
     play_args.add_argument("--checkpoint_dir", type=str, default='./checkpoints', help="Directory for saving/loading checkpoints")
     play_args.add_argument("--checkpoint_file", type=str, default=None, help="Checkpoint file to load and resume training from (if None, train from scratch)")
 
+    #Render
+    play_args.add_argument('--render_mode', '-m', metavar='render_mode', help='Render Mode (default: human)', default='human')
+    play_args.add_argument('--gifs', action='store_true', help='Generate Gif files from images')
+    play_args.add_argument('--save', action='store_true', help='Save images of single steps')
+
     return play_args.parse_args()
 
+generate_gifs = args.gifs
+render_mode = args.render_mode
+save_images = args.save or args.gifs
+scale_image = 16
 
 def play(args):
     ACTION_SPACE = np.array([1, 2, 3, 4], dtype=np.uint8)
@@ -78,7 +88,7 @@ def play(args):
 
         while not ep_done:
             time.sleep(0.05)
-            img = env.render(mode='rgb_array')
+            img = env.render()
             plt.imshow(img)
             display.clear_output(wait=True)
             display.display(plt.gcf())
@@ -86,7 +96,7 @@ def play(args):
             if step < initial_steps:
                 actionID = sample_action_space()
             else:
-                state = tf.convert_to_tensor(state_buf.get_state())
+                state = tf.convert_to_tensor(state_buf.get_state(), dtype=tf.float32)
                 state = state[tf.newaxis, ...]      # Add an axis for batch
                 actionQID = DQN_target.predict(state)
                 actionID = actionQID_to_actionID(int(actionQID))    # convert from Tensor to int
@@ -100,7 +110,21 @@ def play(args):
             if terminal or step == args.max_ep_length:
                 ep_done = True
 
+        if generate_gifs:
+            print('')
+            import imageio
 
+            with imageio.get_writer(os.path.join('images', 'round_{}.gif'.format(i_episode)), mode='I', fps=1) as writer:
+
+                    for t in range(n_steps):
+                        try:
+
+                            filename = os.path.join('images', 'observation_{}_{}.png'.format(i_episode, t))
+                            image = imageio.imread(filename)
+                            writer.append_data(image)
+
+                        except:
+                            pass
 
 
 if  __name__ == '__main__':
