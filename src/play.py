@@ -141,7 +141,7 @@ def play(args):
 
             if save_images:
                 img = Image.fromarray(np.array(env.render(render_mode, scale=scale_image)), 'RGB')
-                img.save(os.path.join('images', 'observation_{}_{}.png'.format(ep, step)))
+                img.save(os.path.join('steps', 'observation_{}_{}.png'.format(ep, step)))
 
             # Episode can finish either by reaching terminal state or max episode steps
             if terminal or step == args.max_ep_length:
@@ -151,11 +151,11 @@ def play(args):
                 print('')
                 import imageio
 
-                with imageio.get_writer(os.path.join('images', 'episode_{}.gif'.format(ep)), mode='I', fps=1) as writer:
+                with imageio.get_writer(os.path.join('gif', 'episode_{}.gif'.format(ep)), mode='I', fps=1) as writer:
 
                     for t in range(args.max_ep_length):
                         try:
-                            filename = os.path.join('images', 'observation_{}_{}.png'.format(ep, t))
+                            filename = os.path.join('steps', 'observation_{}_{}.png'.format(ep, t))
                             image = imageio.imread(filename)
                             writer.append_data(image)
                         except:
