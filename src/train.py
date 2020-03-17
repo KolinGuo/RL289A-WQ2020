@@ -217,7 +217,8 @@ def train(args):
 
         ## Training Step
         # Sample a random minibatch of transitions from ReplayMemory
-        states_batch, actions_batch, rewards_batch, next_states_batch, terminals_batch = replay_mem.getMinibatch()
+        states_batch, actionID_batch, rewards_batch, next_states_batch, terminals_batch = replay_mem.getMinibatch()
+        actionQID_batch = actionID_to_actionQID(actionID_batch)
         # Infer DQN_target for Q(S', A)
         next_states_batch = tf.convert_to_tensor(next_states_batch, dtype=tf.float32)
         next_states_Qvals = DQN_target.infer(next_states_batch)
@@ -234,7 +235,7 @@ def train(args):
         # Pass to DQN
         states_batch = tf.cast(states_batch, tf.float32)
         targetQs = tf.cast(targetQs, tf.float32)
-        DQN.train_step(states_batch, actions_batch, targetQs)
+        DQN.train_step(states_batch, actionQID_batch, targetQs)
 
         # Update DQN_target every args.update_target_step steps
         if si % args.update_target_step == 0:
