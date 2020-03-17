@@ -82,8 +82,29 @@ def play(args):
         try:
             os.makedirs('images')
             os.chdir('images')
+            os.makedirs('steps')
+            os.makedirs('gif')
+
         except OSError:
             print('Error: Creating images target directory. ')
+    else:
+        try:
+            os.chdir('images')
+            if not os.path.exists('steps'):
+                try:
+                    os.makedirs('steps')
+                except OSError:
+                    print('Error: Creating steps target directory. ')
+
+
+            if not os.path.exists('gif'):
+                try:
+                    os.makedirs('gif')
+                except OSError:
+                    print('Error: Creating gif target directory. ')
+
+        except OSError:
+            print('Error: Entering images target directory. ')
 
 
     if args.checkpoint_file is not None:    # Resume training
@@ -130,7 +151,7 @@ def play(args):
                 print('')
                 import imageio
 
-                with imageio.get_writer(os.path.join('images', 'round_{}.gif'.format(ep)), mode='I', fps=1) as writer:
+                with imageio.get_writer(os.path.join('images', 'episode_{}.gif'.format(ep)), mode='I', fps=1) as writer:
 
                     for t in range(args.max_ep_length):
                         try:
