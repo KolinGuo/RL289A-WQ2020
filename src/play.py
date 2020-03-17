@@ -91,7 +91,7 @@ def play(args):
                 actionQID = DQN_target.predict(state)
                 actionID = actionQID_to_actionID(int(actionQID))    # convert from Tensor to int
 
-            observation, reward, terminal, _ = env.step(actionID, observation_mode='rgb_array')
+            observation, reward, terminal, _ = env.step(actionID, observation_mode='tiny_rgb_array')
             grid = preprocess_observation(args, observation)
             state_buf.add(grid)
             step += 1

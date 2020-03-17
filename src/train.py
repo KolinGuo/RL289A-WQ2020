@@ -5,7 +5,7 @@
 '''
 
 from datetime import datetime
-import json, os, sys, argparse, logging, random, time
+import json, os, sys, argparse, logging, random, time, shutil
 import gym, gym_sokoban
 import numpy as np
 import matplotlib.pyplot as plt
@@ -27,6 +27,12 @@ def get_train_args():
     train_args.add_argument("--grid_width", type=int, default=10, help="Grid width")
     train_args.add_argument("--grid_height", type=int, default=10, help="Grid height")
     train_args.add_argument("--grids_per_state", type=int, default=4, help="Sequence of grids which constitutes a single state")
+
+    # Environment rewards
+    train_args.add_argument("--env_penalty_for_step", type=float, default=-0.1, help="Reward of performing a step")
+    train_args.add_argument("--env_reward_box_on_target", type=float, default=10.0, help="Reward of pushing a box on target")
+    train_args.add_argument("--env_penalty_box_off_target", type=float, default=-10.0, help="Reward of pushing a box off target")
+    train_args.add_argument("--env_reward_finished", type=float, default=100.0, help="Reward of winning (pushed all boxes on targets)")
 
     # Training parameters
     train_args.add_argument("--num_steps_train", type=int, default=50000000, help="Number of steps to train for")
@@ -116,6 +122,11 @@ def train(args):
     env = gym.make(args.env)
     num_actions = 4     # Push (up, down, left, right): 1, 2, 3, 4
     env.unwrapped.set_maxsteps(args.max_step)
+    env.unwrapped.set_rewards(
+            [args.env_penalty_for_step, 
+                args.env_reward_box_on_target, 
+                args.env_penalty_box_off_target, 
+                args.env_reward_finished])
 
     # Initialize replay memory and state buffer
     replay_mem = ReplayMemory(args)
@@ -150,7 +161,7 @@ def train(args):
         if terminal:
             env.reset()
 
-        sys.stdout.write('\x1b[2K\rStep {:d}/{:d}'.format(si, args.initial_replay_mem_size))
+        sys.stdout.write('\x1b[2K\rStep {:d}/{:d}'.format(si+1, args.initial_replay_mem_size))
         sys.stdout.flush()
 
     # Start training
@@ -208,7 +219,8 @@ def train(args):
         # Infer DQN_target for Q(S', A)
         next_states_batch = tf.convert_to_tensor(next_states_batch, dtype=tf.float32)
         next_states_Qvals = DQN_target.infer(next_states_batch)
-        max_next_states_Qvals = np.max(next_states_Qvals, axis=1)
+        max_next_states_Qvals = tf.math.reduce_max(next_states_Qvals, axis=1)
+        max_next_states_Qvals = np.array(max_next_states_Qvals)
         assert max_next_states_Qvals.shape == (args.batch_size,), "Wrong dimention for predicted next state Q vals"
         # Set Q(S', A) for all terminal state S'
         max_next_states_Qvals[terminals_batch] = 0
@@ -237,8 +249,8 @@ def train(args):
 
             logger.info("{Training Step: %d/%d}", si, args.num_steps_train)
             logger.info("Number of Episodes: %d", len(reward_episodes))
-            logger.info("Recent Step Exploration Rate: %.3f", epsilon)
-            logger.info("Average Per-Episode Reward: %.3f", sum(reward_episodes)/float(len(reward_episodes)))
+            logger.info("Recent Step Exploration Rate: %.5f", epsilon)
+            logger.info("Average Per-Episode Reward: %.5f", sum(reward_episodes)/float(len(reward_episodes)))
             logger.info("Average Per-Episode Step: %.3f", sum(step_episodes)/float(len(step_episodes)))
             logger.info("Average Per-Step Maximum Predicted Q Value: %.8f", sum(Qval_steps)/float(len(Qval_steps)))
             logger.info("Average Per-Step Training Loss: %.8f", avg_training_loss)
@@ -250,8 +262,14 @@ def train(args):
 
         # Save checkpoint
         if si % args.save_checkpoint_step == 0:
-            save_checkpoint_path = os.path.join(args.checkpoint_dir, 'DQN_Train_{}.tf'.format(si))
+            save_checkpoint_path = os.path.join(args.checkpoint_dir, 
+                    '{}_DQN_Train_{}.tf'.format(args.log_filename.split('.')[0], si))
             DQN.save_model(save_checkpoint_path)
+            # Duplicate the current logfile
+            src_log_filepath = os.path.join(args.log_dir, args.log_filename)
+            dst_log_filepath = os.path.join(args.checkpoint_dir, 
+                    args.log_filename.replace('.', '_DQN_Train_{}.'.format(si)))
+            shutil.copyfile(src_log_filepath, dst_log_filepath)
 
     # Training finished
     logger.info("Finished training...")
