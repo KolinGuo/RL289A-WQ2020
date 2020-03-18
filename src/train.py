@@ -35,6 +35,7 @@ def get_train_args():
     train_args.add_argument("--env_reward_finished", type=float, default=100.0, help="Reward of winning (pushed all boxes on targets)")
 
     # Training parameters
+    train_args.add_argument("--save_tb_trace", type=bool, default=False, help="Save TensorBoard trace for first 1000 step")
     train_args.add_argument("--num_steps_train", type=int, default=50000000, help="Number of steps to train for")
     train_args.add_argument("--batch_size", type=int, default=32, help="Batch size of state transitions")
     train_args.add_argument("--learning_rate", type=float, default=0.00025, help="Learning rate")
@@ -189,6 +190,9 @@ def train(args):
         os.makedirs(tf_train_log_dir)
     train_summary_writer = tf.summary.create_file_writer(tf_train_log_dir)
     train_summary_writer.set_as_default()
+    if args.save_tb_trace:
+        # Model graphs
+        tf.summary.trace_on(graph=True, profiler=True)
 
     reset_env_and_state_buffer(env, state_buf, args)
     logger.info("Start training...")
@@ -282,6 +286,10 @@ def train(args):
             tf.summary.scalar('avgQval', sum(Qval_steps)/float(len(Qval_steps)), step=si, description='Average Per-Step Maximum Predicted Q Value')
             tf.summary.scalar('avgTrainLoss', avg_training_loss, step=si, description='Average Per-Step Training Loss')
             tf.summary.scalar('avgTrainTime', sum(duration_steps)/float(len(duration_steps)), step=si, description='Average Per-Step Training Time')
+
+            if args.save_tb_trace:
+                # Save computation graph
+                tf.summary.trace_export(name="model_trace", step=si, profiler_outdir=tf_train_log_dir)
 
             # Reset the parameters
             reward_episodes = []
