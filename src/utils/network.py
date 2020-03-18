@@ -71,11 +71,12 @@ class DQNModel:
             # behavior during training versus inference (e.g. Dropout).
             Q_vals = self.model(states, training=True)
             actions_one_hot = tf.one_hot(actions, self.num_actions, on_value=1.0, off_value=0.0, dtype=tf.float32)
-            Q_vals_actions = tf.math.reduce_sum(Q_vals * actions_one_hot, axis=1)
+            Q_vals_actions = tf.math.multiply(Q_vals, actions_one_hot, name='element-wise_Multiply')
+            Q_vals_actions = tf.math.reduce_sum(Q_vals_actions, axis=1, name='reduce_sum')
             loss = self.loss_func(targetQs, Q_vals_actions)
 
         gradients = tape.gradient(loss, self.model.trainable_variables)
-        self.optimizer.apply_gradients(zip(gradients, self.model.trainable_variables))
+        self.optimizer.apply_gradients(zip(gradients, self.model.trainable_variables), name='apply_gradient')
 
         # Accumulate training loss
         self.train_loss.update_state(loss)
