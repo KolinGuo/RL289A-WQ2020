@@ -132,6 +132,7 @@ build_docker_container() {
     --gpus all \
   	-p $JUPYTERPORT:$JUPYTERPORT \
   	-p $TENSORBOARDPORT:$TENSORBOARDPORT \
+    --privileged=true \
   	$IMGNAME /bin/bash
   test_retval "create Docker container"
 }
