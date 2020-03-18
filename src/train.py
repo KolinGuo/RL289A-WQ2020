@@ -182,6 +182,14 @@ def train(args):
     Qval_steps = []
     duration_steps = []
 
+    # Create tf summary writer to write summaries to disk
+    # ./logs/train/20200318_120026
+    tf_train_log_dir = os.path.join(args.log_dir.replace('train', 'tf_train'), args.log_filename.split('.')[0])
+    if not os.path.exists(tf_train_log_dir):
+        os.makedirs(tf_train_log_dir)
+    train_summary_writer = tf.summary.create_file_writer(tf_train_log_dir)
+    train_summary_writer.set_as_default()
+
     reset_env_and_state_buffer(env, state_buf, args)
     logger.info("Start training...")
     for si in range(start_step+1, args.num_steps_train+1):
@@ -266,6 +274,16 @@ def train(args):
             logger.info("Average Per-Step Maximum Predicted Q Value: %.8f", sum(Qval_steps)/float(len(Qval_steps)))
             logger.info("Average Per-Step Training Loss: %.8f", avg_training_loss)
             logger.info("Average Per-Step Training Time: %.5f second", sum(duration_steps)/float(len(duration_steps)))
+
+            tf.summary.scalar('Episodes', len(reward_episodes), step=si, description='Number of Episodes')
+            tf.summary.scalar('epsilon', epsilon, step=si, description='Recent Step Exploration Rate')
+            tf.summary.scalar('avgReward', sum(reward_episodes)/float(len(reward_episodes)), step=si, description='Average Per-Episode Reward')
+            tf.summary.scalar('avgStep', sum(step_episodes)/float(len(step_episodes)), step=si, description='Average Per-Episode Step Count')
+            tf.summary.scalar('avgQval', sum(Qval_steps)/float(len(Qval_steps)), step=si, description='Average Per-Step Maximum Predicted Q Value')
+            tf.summary.scalar('avgTrainLoss', avg_training_loss, step=si, description='Average Per-Step Training Loss')
+            tf.summary.scalar('avgTrainTime', sum(duration_steps)/float(len(duration_steps)), step=si, description='Average Per-Step Training Time')
+
+            # Reset the parameters
             reward_episodes = []
             step_episodes = []
             duration_steps = []
