@@ -12,9 +12,10 @@ import gym
 import tensorflow as tf
 import numpy as np
 import scipy.stats as ss
+import random
 
 from train import get_train_args
-from utils.utils import reset_env_and_state_buffer
+from utils.utils import preprocess_observation, reset_env_and_state_buffer
 from utils.state_buffer import StateBuffer
 from utils.network import DQNModel
     
@@ -69,12 +70,12 @@ def test(args):
     # Create environment
     env = gym.make(args.env)
     num_actions = env.action_space.n
-    env.unwrapped.set_maxsteps(args.max_step) #TODO may not need
-    env.unwrapped.set_rewards(
-        [args.env_penalty_for_step, 
-            args.env_reward_box_on_target, 
-            args.env_penalty_box_off_target, 
-            args.env_reward_finished])
+    #env.unwrapped.set_maxsteps(args.max_step) #TODO may not need
+    #env.unwrapped.set_rewards(
+    #    [args.env_penalty_for_step, 
+    #        args.env_reward_box_on_target, 
+    #        args.env_penalty_box_off_target, 
+    #        args.env_reward_finished])
 
     # Set random seeds for reproducability
     env.seed(args.random_seed)
@@ -98,6 +99,7 @@ def test(args):
 
         # Reset environment and state buffer for next episode
         reset_env_and_state_buffer(env, state_buf, args)
+        ep_reward = 0
         step = 0
         ep_done = False
         initial_steps = np.random.randint(1, args.max_initial_random_steps+1)
@@ -131,7 +133,7 @@ def test(args):
             step += 1
             ep_reward += reward
 
-            sys.stdout.write('\x1b[2K\rTest ep {:d}/{:d} \t Steps = {:d} \t Reward = {:.2f} \t'.format(test_ep, args.num_eps, step, ep_reward, actionID))
+            sys.stdout.write('\x1b[2K\rTest ep {:d}/{:d} \t Steps = {:d} \t Reward = {:.2f} \t'.format(ep, args.num_eps, step, ep_reward, actionID))
             sys.stdout.flush() 
 
             # Episode can finish either by reaching terminal state or max episode steps
@@ -150,14 +152,14 @@ def test(args):
     #summary_writer.add_summary(summary_str, train_ep) #TODO need?
      
     # Write results to file        
-    if args.results_file is not None:
-        if not os.path.exists(args.results_dir):
-            os.makedirs(args.results_dir)
-        output_file = open(args.results_dir + '/' + args.results_file, 'a')
-        output_file.write('Training Episode {}: \t Average reward = {:.2f} +/- {:.2f} /ep \n\n'.format(train_ep, mean_reward, error_reward))
-        output_file.flush()
-        sys.stdout.write('Results saved to file \n\n')
-        sys.stdout.flush()      
+    #if args.results_file is not None:
+        #if not os.path.exists(args.results_dir):
+            #os.makedirs(args.results_dir)
+        #output_file = open(args.results_dir + '/' + args.results_file, 'a')
+        #output_file.write('Training Episode {}: \t Average reward = {:.2f} +/- {:.2f} /ep \n\n'.format(ep, mean_reward, error_reward))
+        #output_file.flush()
+        #sys.stdout.write('Results saved to file \n\n')
+        #sys.stdout.flush()      
     
     env.close()  
 
