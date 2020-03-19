@@ -142,9 +142,9 @@ def train(args):
     load_model_path = None
     if args.checkpoint_file is not None:    # Resume training
         load_model_path = os.path.join(args.checkpoint_dir, args.checkpoint_file)
-        assert os.path.exists(load_model_path), 'Path "{}" does not exist!'.format(load_model_path)
+        assert os.path.exists(load_model_path+'.index'), 'Path "{}" does not exist!'.format(load_model_path+'.index')
 
-        start_step = args.checkpoint_file.split('/')[-1].split('.')[0].split('_')[-1]
+        start_step = args.checkpoint_file.split('/')[-1].split('-')[-1]
         assert len(start_step)>0, "Invalid checkpoint file for extracting start_step"
         start_step = int(start_step)
     else:   # Train from scratch
@@ -267,7 +267,7 @@ def train(args):
 
         # Update DQN_target every args.update_target_step steps
         if si % args.update_target_step == 0:
-            update_save_path = os.path.join(args.checkpoint_dir, 'DQN_Update.tf')
+            update_save_path = os.path.join(args.checkpoint_dir, 'DQN_Update')
             DQN.save_model(update_save_path)
             DQN_target.load_model(update_save_path)
 
@@ -308,8 +308,8 @@ def train(args):
         # Save checkpoint
         if si % args.save_checkpoint_step == 0:
             save_checkpoint_path = os.path.join(args.checkpoint_dir, 
-                    'DQN_Train_{}.tf'.format(si))
-            DQN.save_model(save_checkpoint_path)
+                    'DQN_Train')
+            DQN.save_model(save_checkpoint_path, ckpt_number=si)
             # Duplicate the current logfile
             src_log_filepath = os.path.join(args.log_dir, args.log_filename)
             dst_log_filepath = os.path.join(args.checkpoint_dir, 
@@ -319,8 +319,8 @@ def train(args):
     # Training finished
     logger.info("Finished training...")
     # Save trained network
-    save_final_network_path = os.path.join(args.checkpoint_dir, 'DQN_Trained_{}.tf'.format(args.num_steps_train))
-    DQN.save_model(save_final_network_path)
+    save_final_network_path = os.path.join(args.checkpoint_dir, 'DQN_Trained')
+    DQN.save_model(save_final_network_path, ckpt_number=args.num_steps_train)
 
 if __name__ == '__main__':
     # Change back to repository directory
