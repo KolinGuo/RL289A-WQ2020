@@ -19,6 +19,9 @@ from utils.utils import preprocess_observation, reset_env_and_state_buffer
 def get_train_args():
     train_args = argparse.ArgumentParser()
 
+    # Random Seed
+    train_args.add_argument("--random_seed", type=int, default=1234, help="Random seed for reproducability")
+
     # Environment parameters
     train_args.add_argument("--env", type=str, default='Boxoban-Train-v0', help="Environment to use for training")
     train_args.add_argument("--num_surfaces", type=int, default=7, help="Number of room surfaces for one-hot encoding")
@@ -124,6 +127,12 @@ def train(args):
                 args.env_reward_box_on_target, 
                 args.env_penalty_box_off_target, 
                 args.env_reward_finished])
+
+    # Set random seeds for reproducability
+    random.seed(args.random_seed)
+    env.seed(args.random_seed)
+    np.random.seed(args.random_seed)
+    tf.random.set_seed(args.random_seed)
 
     # Initialize replay memory and state buffer
     replay_mem = ReplayMemory(args)
