@@ -31,10 +31,10 @@ def get_play_args(train_args):
     play_args.add_argument("--grids_per_state", type=int, default=4, help="Sequence of grids which constitutes a single state")
 
     # Play parameters
-    play_args.add_argument("--num_eps", type=int, default=5, help="Number of episodes to run for")
+    play_args.add_argument("--num_eps", type=int, default=10, help="Number of episodes to run for")
     play_args.add_argument("--max_ep_length", type=int, default=200, help="Maximum number of steps per episode")
     play_args.add_argument("--max_initial_random_steps", type=int, default=4, help="Maximum number of random steps to take at start of episode to ensure random starting point")
-    play_args.add_argument("--epsilon_value", type=float, default=0.05, help="Exploration rate for the play")
+    play_args.add_argument("--epsilon_value", type=float, default=0.1, help="Exploration rate for the play")
 
     # Files/directories
     play_args.add_argument("--checkpoint_dir", type=str, default='./checkpoints', help="Directory for saving/loading checkpoints")
@@ -70,7 +70,7 @@ def play(args):
 
     # Create environment
     env = gym.make(args.env)
-    num_actions = env.action_space.n
+    num_actions = 4
 
 
     state_buf = StateBuffer(args)
