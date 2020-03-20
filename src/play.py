@@ -35,7 +35,7 @@ def get_play_args(train_args):
     play_args.add_argument("--max_ep_length", type=int, default=200, help="Maximum number of steps per episode")
     play_args.add_argument("--max_initial_random_steps", type=int, default=4, help="Maximum number of random steps to take at start of episode to ensure random starting point")
     play_args.add_argument("--epsilon_value", type=float, default=0.05, help="Exploration rate for the play")
-
+    play_args.add_argument("--learning_rate", type=float, default=0.00025, help="Learning rate")
     # Files/directories
     play_args.add_argument("--checkpoint_dir", type=str, default='./checkpoints', help="Directory for saving/loading checkpoints")
     play_args.add_argument("--checkpoint_file", type=str, default=None, help="Checkpoint file to load and resume training from (if None, train from scratch)")
@@ -123,6 +123,7 @@ def play(args):
     if not os.path.exists(args.checkpoint_dir):
         os.makedirs(args.checkpoint_dir)
 
+    DQN = DQNModel(state_shape, num_actions, args.learning_rate, load_model_path=load_model_path, name='DQN')
     DQN_target = DQNModel(state_shape, num_actions, load_model_path=load_model_path, name='DQN_target')
 
     env.reset()
@@ -150,7 +151,7 @@ def play(args):
                 else:   # Take greedy action
                     state = tf.convert_to_tensor(state_buf.get_state(), dtype=tf.float32)
                     state = state[tf.newaxis, ...]      # Add an axis for batch
-                    actionQID = DQN_target.predict(state)
+                    actionQID = DQN.predict(state)
                     actionID = actionQID_to_actionID(int(actionQID))    # convert from Tensor to int
                     print("Greedy Action\n")
 
