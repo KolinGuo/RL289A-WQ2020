@@ -41,7 +41,7 @@ def get_test_args(train_args):
     test_params.add_argument("--env_reward_finished", type=float, default=10.0, help="Reward of winning (pushed all boxes on targets)")
     
     # Testing parameters
-    test_params.add_argument("--num_eps", type=int, default=2, help="Number of episodes to test for")
+    test_params.add_argument("--num_eps", type=int, default=20, help="Number of episodes to test for")
     test_params.add_argument("--max_initial_random_steps", type=int, default=10, help="Maximum number of random steps to take at start of episode to ensure random starting point")
     test_params.add_argument("--epsilon_value", type=float, default=0.05, help="Exploration rate for the play")
 
