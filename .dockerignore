@@ -1,0 +1,7 @@
+# Ignore everything
+**
+
+# Allow the following
+!install
+!gym-sokoban
+!bashrc
