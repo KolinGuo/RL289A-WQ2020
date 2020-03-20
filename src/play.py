@@ -109,8 +109,23 @@ def play(args):
 
     if args.checkpoint_file is not None:    # Resume training
         load_model_path = os.path.join(args.checkpoint_dir, args.checkpoint_file)
+        assert os.path.exists(load_model_path+'.index'), 'Path "{}" does not exist!'.format(load_model_path+'.index')
 
-    DQN_target = DQNModel(state_shape, num_actions, args.learning_rate, load_model_path=load_model_path, name='DQN')
+        start_step = args.checkpoint_file.split('/')[-1].split('-')[-1]
+        assert len(start_step)>0, "Invalid checkpoint file for extracting start_step"
+        start_step = int(start_step)
+    else:   # Train from scratch
+        # Create another directory for this training
+        args.checkpoint_dir = os.path.join(args.checkpoint_dir, args.log_filename.split('.')[0])
+        start_step = 0
+
+    # Create checkpoint directory
+    if not os.path.exists(args.checkpoint_dir):
+        os.makedirs(args.checkpoint_dir)
+
+    DQN_target = DQNModel(state_shape, num_actions, load_model_path=load_model_path, name='DQN_target')
+
+    env.reset()
 
     for ep in range(0, args.num_eps):
         # Reset environment and state buffer for next episode
