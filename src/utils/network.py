@@ -10,7 +10,7 @@ from tensorflow.keras import layers, optimizers, losses
 import logging
 
 class DQNModel:
-    def __init__(self, state_shape, num_actions, learning_rate=None, load_model_path=None, name='DQN'):
+    def __init__(self, state_shape, num_actions, learning_rate=0.00025, load_model_path=None, name='DQN'):
         # Get logger for network
         self.logger = logging.getLogger(name)
 
@@ -18,30 +18,22 @@ class DQNModel:
         self.num_actions = num_actions
 
         # Create DQN model
-        # If train from beginning
-        if load_model_path is None: 
-            # Set backend float dtype
-            keras.backend.set_floatx('float32')
-            # Input dim: (batch, H, W, D, channels) = (32, 10, 10, 7, 4)
-            inputs = keras.Input(shape=self.state_shape, dtype='float32', name='state')
-            x = layers.Conv3D(32, (7, 7, 5), 1, padding='same', activation='relu', name='conv1')(inputs)
-            x = layers.Conv3D(64, (5, 5, 5), 1, padding='same', activation='relu', name='conv2')(x)
-            x = layers.Conv3D(64, (3, 3, 3), 1, padding='same', activation='relu', name='conv3')(x)
-            x = layers.Flatten(name='flatten')(x)
-            x = layers.Dense(512, activation='relu', name='d1')(x)
-            outputs = layers.Dense(self.num_actions, name='d2')(x)
+        # Set backend float dtype
+        keras.backend.set_floatx('float32')
+        # Input dim: (batch, H, W, D, channels) = (32, 10, 10, 7, 4)
+        inputs = keras.Input(shape=self.state_shape, dtype='float32', name='state')
+        x = layers.Conv3D(32, (7, 7, 5), 1, padding='same', activation='relu', name='conv1')(inputs)
+        x = layers.Conv3D(64, (5, 5, 5), 1, padding='same', activation='relu', name='conv2')(x)
+        x = layers.Conv3D(64, (3, 3, 3), 1, padding='same', activation='relu', name='conv3')(x)
+        x = layers.Flatten(name='flatten')(x)
+        x = layers.Dense(512, activation='relu', name='d1')(x)
+        outputs = layers.Dense(self.num_actions, name='d2')(x)
     
-            self.model = keras.Model(inputs, outputs, name=name)
-
-            self.logger.info('__init__: Creating a new DQN model')
-        else:    # Restart training from the checkpoint
-            self.model = keras.models.load_model(load_model_path)
-
-            self.logger.info('__init__: Loading an existing DQN model from "%s"', load_model_path)
+        self.model = keras.Model(inputs, outputs, name=name)
 
         # Create optimizer
-        if learning_rate is not None:
-            self.optimizer = optimizers.RMSprop(learning_rate, momentum=0.95, epsilon=0.01)
+        self.optimizer = optimizers.RMSprop(learning_rate, momentum=0.95, epsilon=0.01)
+
         # Create loss function
         #self.loss_func = losses.MeanSquaredError()
         self.loss_func = losses.Huber()  # less sensitive to outliers (linearized MSE when |x| > delta)
@@ -49,19 +41,46 @@ class DQNModel:
         self.train_loss = keras.metrics.Mean(name='train_loss')
         self.train_loss.reset_states()
 
+        # Create checkpoint
+        self.checkpoint = tf.train.Checkpoint(model=self.model, 
+                                              optimizer=self.optimizer)
+        if load_model_path is None: 
+            self.logger.info('__init__: Creating a new DQN model')
+        else:    # Restart training from the checkpoint
+            self.checkpoint.restore(load_model_path)
+            self.logger.info('__init__: Loading an existing DQN model from "%s"', load_model_path)
+
     def print_model_summary(self):
         self.model.summary()
 
     def plot_model(self, show_shapes=True):
         keras.utils.plot_model(self.model, show_shapes=show_shapes)
 
-    def save_model(self, save_path):
-        self.model.save(save_path)
-        self.logger.info('Saving the model to %s', save_path)
+    def save_model(self, save_path, ckpt_number=None):
+        # Save (only model weights) for update
+        if ckpt_number is None: 
+            self.checkpoint = tf.train.Checkpoint(model=self.model)
+            ckpt_manager = tf.train.CheckpointManager(self.checkpoint, 
+                    directory=save_path, max_to_keep=1, checkpoint_name='ckpt')
+        else:   # Save (both model weights and optimizer) during training
+            self.checkpoint = tf.train.Checkpoint(model=self.model, 
+                                                  optimizer=self.optimizer)
+            ckpt_manager = tf.train.CheckpointManager(self.checkpoint, 
+                    directory=save_path, max_to_keep=None, checkpoint_name='ckpt')
 
+        ckpt_path = ckpt_manager.save(ckpt_number)
+
+        self.logger.info('Saving the model to %s', ckpt_path)
+
+    # Only called for updating DQN_target
     def load_model(self, load_path):
-        self.model = keras.models.load_model(load_path)
-        self.logger.info('Loading the model from %s', load_path)
+        self.checkpoint = tf.train.Checkpoint(model=self.model)
+        ckpt_manager = tf.train.CheckpointManager(self.checkpoint, 
+                    directory=load_path, max_to_keep=1, checkpoint_name='ckpt')
+
+        self.checkpoint.restore(ckpt_manager.latest_checkpoint).assert_consumed()
+
+        self.logger.info('Loading the model from %s', ckpt_manager.latest_checkpoint)
 
     # Train a step with a batch of states
     @tf.function
