@@ -13,6 +13,7 @@ import tensorflow as tf
 import numpy as np
 import scipy.stats as ss
 import random
+import re
 import pdb
 
 from train import get_train_args
@@ -40,7 +41,7 @@ def get_test_args(train_args):
     test_params.add_argument("--env_reward_finished", type=float, default=10.0, help="Reward of winning (pushed all boxes on targets)")
     
     # Testing parameters
-    test_params.add_argument("--num_eps", type=int, default=5, help="Number of episodes to test for")
+    test_params.add_argument("--num_eps", type=int, default=2, help="Number of episodes to test for")
     test_params.add_argument("--max_initial_random_steps", type=int, default=10, help="Maximum number of random steps to take at start of episode to ensure random starting point")
     test_params.add_argument("--epsilon_value", type=float, default=0.05, help="Exploration rate for the play")
 
@@ -53,6 +54,76 @@ def get_test_args(train_args):
     test_params.add_argument("--results_file", type=str, default=results_filename, help="Text file of test results (if None, do not save results), (current timestamp) DON'T MODIFY")
     
     return test_params.parse_args()
+
+
+class Counts():
+    def __init__(self):
+        self.on = 0
+        self.off = 0
+        self.win = 0
+
+    def reward_update(self, reward):
+        if reward == 0.9:
+            self.on = self.on + 1
+        elif reward == -1.1:
+            self.off = self.off + 1
+        elif reward == 9.9:
+            self.win = 1
+        elif reward != -0.1:
+            print("Weird Reward: " + str(reward))
+            exit(0)
+
+    def update_all(self, newCounts):
+        self.on = self.on + newCounts.on
+        self.off = self.off + newCounts.off
+        self.win = self.win + newCounts.win
+
+    def get (self):
+        return (self.on, self.off, self.win)
+
+    def get_str(self):
+        return '\rMoved block on target: {:d} \tMoved block off target: {:d} \t Win: {:d}\n\r'.format(self.on, self.off, self.win)
+        #'\x1b[2K\rMoved block on target: {:d} \tMoved block off target: {:d} \t Win: {:d} \t'.format(self.on, self.off, self.win)
+
+
+def get_checkpoint_paths(args):
+    checkpoint_paths = []
+
+    #Load single checkpoint path
+    if args.checkpoint_file is not None: 
+        load_model_path = os.path.join(args.checkpoint_dir, args.checkpoint_file)
+        checkpoint_paths.append(load_model_path)
+
+    #Load checkpoint paths to array
+    elif args.checkpoint_dir is not None: 
+        directory = os.listdir(args.checkpoint_dir)
+
+        checkpoint_paths.append(None) #Put in starting case with no cp
+
+        #Get decimal cp codes and sort so tests are done in order
+        cp_codes = []
+        for file_in in directory:
+            match = re.search("ckpt\-(\d+)\.index", file_in)
+            if match:
+                cp_codes.append(int(match.group(1)))
+        cp_codes.sort()
+
+        #create sorted path names
+        for code in cp_codes:
+            file_out = "ckpt-" + str(code)
+            load_model_path = os.path.join(args.checkpoint_dir, file_out)
+            checkpoint_paths.append(load_model_path)
+
+    #No arguments, just the default starting case with no cp
+    else:
+        checkpoint_paths.append(None)
+
+    return checkpoint_paths
+
+
+def output(out_str, out_file):
+    print(out_str)
+    out_file.write(out_str)
 
 
 def test(args):
@@ -69,15 +140,24 @@ def test(args):
     def actionQID_to_actionID(actionQID):
         return actionQID+1
 
+    def get_actionID(step, initial_steps, epsilon):
+    #Choose random action for initial steps to ensure every episode has a random start point. Then choose action with highest Q-value according to network's current policy.
+        if step < initial_steps:
+            actionID = sample_action_space()
+        else:
+            if random.random() < epsilon:   # Take random action
+                actionID = sample_action_space()
+            else:   # Take greedy action
+                state = tf.convert_to_tensor(state_buf.get_state(), dtype=tf.float32)
+                state = state[tf.newaxis, ...]      # Add an axis for batch
+                actionQID = DQN_target.predict(state)
+                actionID = actionQID_to_actionID(int(actionQID))    # convert from Tensor to int
+        return actionID
+
+
     # Create environment
     env = gym.make(args.env)
-    num_actions = env.action_space.n
-    #env.unwrapped.set_maxsteps(args.max_step) #TODO may not need
-    #env.unwrapped.set_rewards(
-    #    [args.env_penalty_for_step, 
-    #        args.env_reward_box_on_target, 
-    #        args.env_penalty_box_off_target, 
-    #        args.env_reward_finished])
+    
 
     # Set random seeds for reproducability
     env.seed(args.random_seed)
@@ -86,115 +166,100 @@ def test(args):
 
     state_buf = StateBuffer(args)
     state_shape = (args.grid_height, args.grid_width, args.num_surfaces, args.grids_per_state)
-    load_model_path = None
+    num_actions = 4
+
+    epsilons = [0.1]# [0.9, 0.5, 0.28, 0.2, 0.15, 0.1, 0.05]
+    checkpoint_paths = get_checkpoint_paths(args)
+    num_checkpoints = len(checkpoint_paths)
+
+    out_file = open(args.results_file, "a+")
+    out_file.write("pathStr, epsilon, mean_reward, error_reward, mean_step, ons, offs, wins\n\r")
+
+    for epsilon in epsilons:
+        for cp_id in range(0, num_checkpoints):
+            path = checkpoint_paths[cp_id]
+
+            out_str = "Starting Checkpoint test: {} \t {}/{} \t Epsilon: {}\n\r".format(path, cp_id + 1, num_checkpoints, epsilon)
+            #output(out_str, out_file)
+            print(out_str)
+
+            #if args.checkpoint_list is not None:
+            DQN_target = DQNModel(state_shape, num_actions, load_model_path=path, name='DQN_target')
+
+            #Begin Testing
+            rewards = []
+            step_totals = []
+            cp_totals = Counts()
+            for ep in range(0, args.num_eps):
+
+                # Reset environment and state buffer for next episode
+                reset_env_and_state_buffer(env, state_buf, args)
+                ep_reward = 0
+                ep_totals = Counts()
+
+                step = 0
+                ep_done = False
+                initial_steps = np.random.randint(1, args.max_initial_random_steps+1)
+                
+                while not ep_done:
+                    if args.render:
+                        env.render()
+                    else:
+                        env.render(mode='tiny_rgb_array')
+
+                    actionID = get_actionID(step, initial_steps, epsilon)
+
+                    observation, reward, terminal, _ = env.step(actionID, observation_mode='tiny_rgb_array')
+
+                    grid = preprocess_observation(args, observation)
+                    state_buf.add(grid)
+
+                    step += 1
+                    ep_reward += reward
+                    ep_totals.reward_update(reward)
+
+                    # Episode can finish either by reaching terminal state or max episode steps
+                    if terminal or step == args.max_step:
+                        cp_totals.update_all(ep_totals)
+                        step_totals.append(step)
+
+                        out_str = 'Test ep {:d}/{:d} \t Steps = {:d} \t Reward = {:.2f} \t\n\r'.format(ep + 1, args.num_eps, step, ep_reward, actionID)
+                        #output(out_str, out_file)
+                        print(out_str)
+
+                        out_str =  ep_totals.get_str()
+                        #output(out_str, out_file)
+                        print(out_str)
 
 
-    # Resume from checkpoint
-    if args.checkpoint_file is not None:    
-        load_model_path = os.path.join(args.checkpoint_dir, args.checkpoint_file)
 
-    #if args.checkpoint_list is not None:
+                        rewards.append(ep_reward)
+                        ep_done = True   
 
-
-    DQN_target = DQNModel(state_shape, num_actions, load_model_path=load_model_path, name='DQN_target')
-
-    #Begin Testing
-    rewards = []  
-    on_total = 0 #total times pushed block on target
-    off_total = 0 #total times pushed block off target
-    win_total = 0 #total times won
-    for ep in range(0, args.num_eps):
-
-        # Reset environment and state buffer for next episode
-        reset_env_and_state_buffer(env, state_buf, args)
-        ep_reward = 0
-        on_count_ep = 0 #times pushed block on target in current ep
-        off_count_ep = 0 #times pushed block off target in current ep
-        win_ep = 0 #1 if won
-
-        step = 0
-        ep_done = False
-        initial_steps = np.random.randint(1, args.max_initial_random_steps+1)
-        sys.stdout.write('\n')   
-        sys.stdout.flush()
-        
-        while not ep_done:
-            if args.render:
-                env.render()
+            mean_step = np.mean(step_totals)
+            mean_reward = np.mean(rewards)
+            error_reward = ss.sem(rewards)
+            
+            if not path:
+                pathStr = "Beginning"
             else:
-                env.render(mode='tiny_rgb_array')
+                pathStr = path
 
-            #Choose random action for initial steps to ensure every episode has a random start point. Then choose action with highest Q-value according to network's current policy.
-            if step < initial_steps:
-                actionID = sample_action_space()
-            else:
-                if random.random() < args.epsilon_value:   # Take random action
-                    actionID = sample_action_space()
-                else:   # Take greedy action
-                    state = tf.convert_to_tensor(state_buf.get_state(), dtype=tf.float32)
-                    state = state[tf.newaxis, ...]      # Add an axis for batch
-                    actionQID = DQN_target.predict(state)
-                    actionID = actionQID_to_actionID(int(actionQID))    # convert from Tensor to int
+            out_str = pathStr + ' Checkpoint Testing complete \n\r'
+            #output(out_str, out_file)
+            print(out_str)
 
-            observation, reward, terminal, _ = env.step(actionID, observation_mode='tiny_rgb_array')
+            out_str = 'Average reward = {:.2f} +/- {:.2f} /ep\t Average steps: {}\n\r'.format(mean_reward, error_reward, mean_step)
+            #output(out_str, out_file)
+            print(out_str)
 
-            if reward == 0.9:
-                on_count_ep = on_count_ep + 1
-            elif reward == -1.1:
-                off_count_ep = off_count_ep + 1
-            elif reward == 9.9:
-                win_ep = 1
-            elif reward != -0.1:
-                print("Weird Reward: " + str(reward))
-                exit(0)
+            out_str = 'Totals: ' + cp_totals.get_str() + '\tEpsilon: ' + str(epsilon) + '\n\r\n\r'
+            print(out_str)
+            #output(out_str, out_file)
 
-
-            grid = preprocess_observation(args, observation)
-            state_buf.add(grid)
-
-            step += 1
-            ep_reward += reward
-
-            #sys.stdout.write('\x1b[2K\rTest ep {:d}/{:d} \t Steps = {:d} \t Reward = {:.2f} \t'.format(ep, args.num_eps, step, ep_reward, actionID))
-            #sys.stdout.flush() 
-
-            # Episode can finish either by reaching terminal state or max episode steps
-            if terminal or step == args.max_step:
-                on_total = on_total + on_count_ep
-                off_total = off_total + off_count_ep
-                win_total = win_total + win_ep
-
-                out_str = '\x1b[2K\rTest ep {:d}/{:d} \t Steps = {:d} \t Reward = {:.2f} \t'.format(ep + 1, args.num_eps, step, ep_reward, actionID)
-                print(out_str)
-                out_str = out_str + '\x1b[2K\rMoved block on target: {:d} \tMoved block off target: {:d} \t Win: {:d} \t'.format(on_count_ep, off_count_ep, win_ep)
-                sys.stdout.write(out_str)
-                print("Blah4")
-                sys.stdout.flush() 
-                rewards.append(ep_reward)
-                ep_done = True   
-
-    mean_reward = np.mean(rewards)
-    error_reward = ss.sem(rewards)
-    
-    out_str = '\n\nCheckpoint Testing complete \t Average reward = {:.2f} +/- {:.2f} /ep \n\n'.format(mean_reward, error_reward)
-    out_str = out_str + '\x1b[2K\rMoved block on target total: {:d} \tMoved block off target total: {:d} \t Win total: {:d} \t'.format(on_total, off_total, win_total)
-    sys.stdout.write(out_str)
-    sys.stdout.flush() 
-
-    # Log average episode reward for Tensorboard visualisation
-    #summary_str = sess.run(summary_op, {reward_var: mean_reward}) #TODO change tensor stuff
-    #summary_writer.add_summary(summary_str, train_ep) #TODO need?
-     
-    # Write results to file        
-    #if args.results_file is not None:
-        #if not os.path.exists(args.results_dir):
-            #os.makedirs(args.results_dir)
-        #output_file = open(args.results_dir + '/' + args.results_file, 'a')
-        #output_file.write('Training Episode {}: \t Average reward = {:.2f} +/- {:.2f} /ep \n\n'.format(ep, mean_reward, error_reward))
-        #output_file.flush()
-        #sys.stdout.write('Results saved to file \n\n')
-        #sys.stdout.flush()      
-    
+            out_str = '{},{},{:.2f},{:.2f},{:.2f},{},{},{},\n\r'.format(pathStr, epsilon, mean_reward, error_reward, mean_step, cp_totals.on, cp_totals.off, cp_totals.win)
+            output(out_str, out_file)
+    out_file.close()
     env.close()  
 
 
