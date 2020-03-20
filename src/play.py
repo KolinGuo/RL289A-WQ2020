@@ -110,7 +110,7 @@ def play(args):
     if args.checkpoint_file is not None:    # Resume training
         load_model_path = os.path.join(args.checkpoint_dir, args.checkpoint_file)
 
-    DQN_target = DQNModel(state_shape, num_actions, load_model_path=load_model_path, name='DQN_target')
+    DQN_target = DQNModel(state_shape, num_actions, args.learning_rate, load_model_path=load_model_path, name='DQN')
 
     for ep in range(0, args.num_eps):
         # Reset environment and state buffer for next episode
