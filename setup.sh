@@ -5,11 +5,12 @@ SCRIPT=$(readlink -f "$0")
 SCRIPTPATH=$(dirname "$SCRIPT")
 IMGNAME="openaigym"
 CONTNAME="openaigym"
-DOCKERFILEPATH="./docker"
+#DOCKERFILEPATH="./docker"
 REPONAME="RL289A-WQ2020"
 JUPYTERPORT="9000"
+TENSORBOARDPORT="6006"
 cd "$SCRIPTPATH"
-cd "$DOCKERFILEPATH"
+#cd "$DOCKERFILEPATH"
 
 USAGE="Usage: ./setup.sh [rmimcont=[0,1]] [rmimg=[0,1]]\n"
 USAGE+="\trmimcont=[0,1] : 0 to not remove intermediate Docker containers\n"
@@ -23,7 +24,7 @@ REMOVEIMDDOCKERCONTAINERCMD="--rm=true"
 REMOVEPREVDOCKERIMAGE=false
 
 COMMANDTORUN="cd /$REPONAME && xvfb-run -s \"-screen 0 1280x720x24\" jupyter notebook --no-browser --ip=0.0.0.0 --allow-root --port=$JUPYTERPORT &"
-COMMANDTOINSTALL="cd /$REPONAME/gym-sokoban && pip3 install -e ."
+#COMMANDTOINSTALL="cd /$REPONAME/gym-sokoban && pip3 install -e ."
 COMMANDTOSTARTCONTAINER="docker start -ai $CONTNAME"
 
 # Instead, add user to group 'docker'
@@ -93,12 +94,12 @@ write_command_to_enter_repo_file() {
     && echo -n ${COMMANDTORUN} | sed 's/\"/\\"/g' >> bashrc \
     && echo \" >> bashrc
   # Echo command to install gym_sokoban
-  echo -n COMMANDTOINSTALL=\" >> bashrc \
-    && echo -n ${COMMANDTOINSTALL} | sed 's/\"/\\"/g' >> bashrc \
-    && echo \" >> bashrc
+  #echo -n COMMANDTOINSTALL=\" >> bashrc \
+  #  && echo -n ${COMMANDTOINSTALL} | sed 's/\"/\\"/g' >> bashrc \
+  #  && echo \" >> bashrc
   #echo echo -e \"\\n\\n\" >> bashrc
   echo echo -e \"################################################################################\\n\" >> bashrc
-  echo echo -e \"\\tCommand to install gym_sokoban for the first time:\\n\\t\\t'${COMMANDTOINSTALL}'\\n\" >> bashrc
+  #echo echo -e \"\\tCommand to install gym_sokoban for the first time:\\n\\t\\t'${COMMANDTOINSTALL}'\\n\" >> bashrc
   echo echo -e \"\\tCommand to enter repository:\\n\\t\\t'${COMMANDTORUN}'\\n\" >> bashrc
   echo echo -e \"################################################################################\\n\" >> bashrc
   echo "# Turn off colors" >> bashrc \
@@ -130,6 +131,8 @@ build_docker_container() {
   	--ipc=host \
     --gpus all \
   	-p $JUPYTERPORT:$JUPYTERPORT \
+  	-p $TENSORBOARDPORT:$TENSORBOARDPORT \
+    --privileged=true \
   	$IMGNAME /bin/bash
   test_retval "create Docker container"
 }

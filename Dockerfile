@@ -1,4 +1,5 @@
 FROM tensorflow/tensorflow:2.1.0-gpu-py3-jupyter
+#FROM tensorflow/tensorflow:2.2.0rc0-gpu-py3-jupyter
 
 #########################################
 # SECTION 0: Install OpenGL             #
@@ -80,13 +81,22 @@ RUN python3 -m pip install --upgrade pip
 # SECTION 4: Install Python Libraries   #
 #########################################
 
-COPY requirements.txt /tmp/
+COPY install/requirements.txt /tmp/
 RUN pip3 install -r /tmp/requirements.txt
 
 RUN pip3 install jupyter_contrib_nbextensions \
   && jupyter contrib nbextension install \
   && pip3 install jupyter_nbextensions_configurator \
   && jupyter nbextensions_configurator enable
+
+COPY gym-sokoban /gym-sokoban
+RUN pip3 install -e /gym-sokoban
+
+RUN pip3 uninstall -y tensorflow tensorboard
+RUN pip3 uninstall -y tensorflow tensorboard
+RUN pip3 install -U tf-nightly-gpu tb-nightly tensorboard_plugin_profile
+
+RUN pip3 install virtualenv
 
 WORKDIR /
 

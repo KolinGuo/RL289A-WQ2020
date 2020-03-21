@@ -47,7 +47,7 @@ class ReplayMemory:
         self.count = max(self.count, self.current + 1)
         self.current = (self.current + 1) % self.buffer_size
 
-        logger.debug('{Current/Count: %d/%d} {Action/Reward/Terminal: %d/%.1f/%s}', self.current, self.count, action, reward, terminal)
+        #logger.debug('{Current/Count: %d/%d} {Action/Reward/Terminal: %d/%.1f/%s}', self.current, self.count, action, reward, terminal)
 
     def getState(self, idx):
         # Returns a state consisting of grid at idx and 3 previous grids

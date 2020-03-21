@@ -9,13 +9,13 @@ tqdm
 pytest
 
 # Deep learning
-tensorflow-gpu==2.1.0
-keras
-h5py
-pydot
-keras-rl
-baselines
-tensorforce
+#tensorflow-gpu==2.1.0
+#keras
+#h5py
+#pydot
+#keras-rl
+#baselines
+#tensorforce
 
 # OpenAI Gym requirements
 PyOpenGL
