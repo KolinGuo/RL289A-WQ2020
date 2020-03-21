@@ -1,7 +1,7 @@
 '''
 ## Train ##
 # Code to train Deep Q Network on gym-sokoban environment
-# Adapted from: https://github.com/msinto93/DQN_Atari/blob/master/train.py
+@author: Kolin Guo
 '''
 
 from datetime import datetime
