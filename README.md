@@ -30,3 +30,7 @@ You should be greeted by the Docker container **openaigym** when this script fin
   `python3 src/play.py --checkpoint_dir checkpoints/DQN_Train --checkpoint_file ckpt-100000`  
   
   Some other available arguments can be viewed with `--help` option. 
+
+## Presentation and Report
+Our final presentation (with embedded audio) and report can be found in [docs/](docs) folder.  
+Some additional improvements (CNN+LSTM model, deadlock detection algorithm, A3C algorithm) are discussed at the end of our presentation. 
