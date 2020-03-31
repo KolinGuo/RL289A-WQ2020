@@ -1,5 +1,8 @@
 # RL289A-WQ2020
-Final project for EEC 289A Reinforcement Learning Course
+### Attempting to Solve *Sokoban* using DQN
+Final project for EEC 289A Reinforcement Learning Course  
+
+![](docs/Example_Gameplay_Result.gif "Example Gameplay Result")
 
 ## Group Members 
   * Kolin Guo
